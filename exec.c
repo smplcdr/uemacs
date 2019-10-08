@@ -174,7 +174,7 @@ static int docmd( char *cline) {
     if( !is_it_cmd( tkn)) {
         f = TRUE;
 /* macarg already includes a getval, skip for now
-		mystrscpy( tkn, getval( tkn), sizeof tkn) ;
+		strlcpy( tkn, getval( tkn), sizeof tkn) ;
 */
         n = atoi(tkn);
 
@@ -307,7 +307,7 @@ static char *token( char *srcstr, char *tok, int maxtoksize) {
 	if( newtok == NULL)
 		tok[ 0] = 0 ;
 	else {
-		mystrscpy( tok, newtok, maxtoksize) ;
+		strlcpy( tok, newtok, maxtoksize) ;
 		free( newtok) ;
 	}
 
@@ -334,7 +334,7 @@ boolean gettokval( char *tok, int size) {
 		return FALSE ;
 
     /* evaluate it */
-    mystrscpy( tok, getval( tmpbuf), size) ;
+    strlcpy( tok, getval( tmpbuf), size) ;
     free( tmpbuf) ;
     return TRUE ;
 }
@@ -427,6 +427,7 @@ int storemac(int f, int n)
 **	common to execute buffer, procedure and macro
 */
 static int exec( int n, char *bufname, char *errstr) {
+    int status;
     struct buffer *bp ;		/* ptr to buffer to execute */
 
     /* find the pointer to that buffer */
@@ -437,7 +438,7 @@ static int exec( int n, char *bufname, char *errstr) {
     }
 
     /* and now execute it as asked */
-    int status = TRUE ;
+    status = TRUE ;
     while( status == TRUE && n-- > 0)
         status = dobuf( bp) ;
 
@@ -470,7 +471,7 @@ int storeproc( int f, int n) {
 
     /* construct the macro buffer name */
     bname[ 0] = '*';
-    mystrscpy( &bname[ 1], name, sizeof bname - 2) ;
+    strlcpy( &bname[ 1], name, sizeof bname - 2) ;
     strcat( bname, "*") ;
 	free( name) ;
 
@@ -508,7 +509,7 @@ int execproc( int f, int n) {
 
     /* construct the buffer name */
     bufn[ 0] = '*' ;
-    mystrscpy( &bufn[ 1], name, sizeof bufn - 2) ;
+    strlcpy( &bufn[ 1], name, sizeof bufn - 2) ;
     strcat( bufn, "*") ;
     free( name) ;
 
@@ -678,7 +679,7 @@ static int dobuf(struct buffer *bp)
             return FALSE;
         }
 
-        mystrscpy( eline, lp->l_text, linlen + 1) ;
+        strlcpy( eline, lp->l_text, linlen + 1) ;
 
         /* trim leading whitespace */
         while (*eline == ' ' || *eline == '\t')

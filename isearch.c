@@ -199,7 +199,7 @@ static int isearch(int f, int n)
 	cmd_reexecute = -1;	/* We're not re-executing (yet?)      */
 	cmd_offset = 0;		/* Start at the beginning of the buff */
 	cmd_buff[0] = '\0';	/* Init the command buffer            */
-	mystrscpy( pat_save, pat, sizeof pat_save) ;	/* Save the old pattern string        */
+	strlcpy( pat_save, pat, sizeof pat_save) ;	/* Save the old pattern string        */
 	curline = curwp->w_dotp;	/* Save the current line pointer      */
 	curoff = curwp->w_doto;	/* Save the current offset            */
 	init_direction = n;	/* Save the initial search direction  */
@@ -277,7 +277,7 @@ static int isearch(int f, int n)
 			curwp->w_dotp = curline;	/* Reset the line pointer     */
 			curwp->w_doto = curoff;	/*  and the offset            */
 			n = init_direction;	/* Reset the search direction */
-			mystrscpy( pat, pat_save, sizeof pat) ;	/* Restore the old search str */
+			strlcpy( pat, pat_save, sizeof pat) ;	/* Restore the old search str */
 			cmd_reexecute = 0;	/* Start the whole mess over  */
 			goto start_over;	/* Let it take care of itself */
 

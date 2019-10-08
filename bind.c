@@ -349,7 +349,7 @@ static int buildlist( char *mstring) {
 			continue ;
 #endif
         /* add in the command name */
-        mystrscpy( outseq, nptr->n_name, sizeof outseq) ;
+        strlcpy( outseq, nptr->n_name, sizeof outseq) ;
         cpos = strlen(outseq);
 
         /* search down any keys bound to this */

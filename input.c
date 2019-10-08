@@ -49,7 +49,7 @@ int abortc = CONTROL | 'G' ;		/* current abort command char	 */
 const int nlc = CONTROL | 'J' ;		/* end of input char */
 
 
-void ue_system( const char *cmd) {
+void em_system( const char *cmd) {
     int ret ;
 
     ret = system( cmd) ;
@@ -648,7 +648,7 @@ int getstring( const char *prompt, char *buf, int nbuf, int eolchar)
 				else
 					sprintf( ffbuf, "echo ERROR >%s 2>&1", tmp) ;
 
-                ue_system( ffbuf) ;
+                em_system( ffbuf) ;
                 tmpf = fopen(tmp, "r");
 #endif
 #if MSDOS

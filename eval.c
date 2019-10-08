@@ -35,8 +35,6 @@
 
 #define	MAXVARS	255
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-
 /*	Macro argument token types					*/
 
 #define	TKNUL	0		/* end-of-string                */
@@ -438,7 +436,7 @@ static char *gtfun( char *fname) {
 			ressize = sz + 1 ;
 		}
 
-		mystrscpy( result, arg1, sz + 1) ;
+		strlcpy( result, arg1, sz + 1) ;
 		retstr = result ;
 	}
 		break ;
@@ -482,7 +480,7 @@ static char *gtfun( char *fname) {
 			ressize = sz + 1 ;
 		}
 
-		mystrscpy( result, &arg1[ start], sz + 1) ;
+		strlcpy( result, &arg1[ start], sz + 1) ;
 		retstr = result ;
 	}
 		break ;
@@ -838,7 +836,7 @@ int setvar(int f, int n)
 			return FALSE ;
 
 		/* a bit overcautious here */
-		mystrscpy( value, i_to_a( n), NSTRING) ;
+		strlcpy( value, i_to_a( n), NSTRING) ;
 	} else {
 		status = newmlarg( &value, "Value: ", 0) ;
 		if (status != TRUE)
@@ -926,7 +924,7 @@ fvar:
 		for (vnum = 0; vnum < MAXVARS; vnum++)
 			if (uv[vnum].u_name[0] == 0) {
 				vtype = TKVAR;
-				mystrscpy( uv[ vnum].u_name, &var[ 1], NVSIZE + 1) ;
+				strlcpy( uv[ vnum].u_name, &var[ 1], NVSIZE + 1) ;
 				break;
 			}
 		break;
@@ -1252,7 +1250,7 @@ char *getval(char *token)
 		if( blen >= sizeof buf)
 			blen = sizeof buf - 1 ;
 
-		mystrscpy( buf, bp->b_dotp->l_text + bp->b_doto, blen + 1) ;
+		strlcpy( buf, bp->b_dotp->l_text + bp->b_doto, blen + 1) ;
 
 		/* and step the buffer's line ptr ahead a line */
 		bp->b_dotp = bp->b_dotp->l_fp;

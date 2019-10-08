@@ -53,7 +53,7 @@ char *dolock( const char *fname)
 	int mask;
 	struct stat sbuf;
 
-	mystrscpy( lname, fname, sizeof lname - 6) ;
+	strlcpy( lname, fname, sizeof lname - 6) ;
 	strcat( lname, ".lock~") ;
 
 	/* check that we are not being cheated, qname must point to     */
@@ -127,7 +127,7 @@ char *dolock( const char *fname)
 char *undolock( const char *fname) {
 	char lname[ MAXLOCK] ;
 
-	mystrscpy( lname, fname, sizeof lname - 6) ;
+	strlcpy( lname, fname, sizeof lname - 6) ;
 	strcat( lname, ".lock~") ;
 	if (unlink(lname) != 0) {
 		if (errno == EACCES || errno == ENOENT)

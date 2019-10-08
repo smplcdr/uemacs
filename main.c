@@ -108,21 +108,19 @@ static void version( void) {
 
 
 static void usage( void) {
-    fputs( "Usage: " PROGRAM_NAME " [OPTION|FILE]..\n\n"
-           "      +             start at the end of file\n"
-           "      +<n>          start at line <n>\n"
-           "      --help        display this help and exit\n"
-           "      --version     output version information and exit\n"
-           "      -a|A          process error file\n"
-           "      -e|E          edit file\n"
-           "      -g|G<n>       go to line <n>\n"
-           "      -r|R          restrictive use\n"
-           "      -s|S<string>  search string\n"
-           "      -v|V          view file\n"
-           "      -x|Xcmdfile\n"
-           "      -x|X cmdfile  execute command file\n"
-           "      @cmdfile      execute startup file\n"
-           , stdout) ;
+    puts( "Usage: "PROGRAM_NAME" [OPTION|FILE]..\n");
+    puts("      +             start at the end of file");
+    puts("      +<n>          start at line <n>");
+    puts("      --help        display this help and exit");
+    puts("      --version     output version information and exit");
+    puts("      -a|A          process error file");
+    puts("      -e|E          edit file");
+    puts("      -g|G<n>       go to line <n>");
+    puts("      -r|R          restrictive use");
+    puts("      -s|S<string>  search string");
+    puts("      -v|V          view file");
+    puts("      -x|X cmdfile  execute command file\n");
+    puts("      @cmdfile      execute startup file\n");
 }
 
 
@@ -209,7 +207,7 @@ int main(int argc, char **argv)
 			case 's':	/* -s for initial search string */
 			case 'S':
 				searchflag = TRUE;
-				mystrscpy( pat, &argv[ carg][ 2], sizeof pat) ;
+				strlcpy( pat, &argv[ carg][ 2], sizeof pat) ;
 				break;
 			case 'v':	/* -v for View File */
 			case 'V':
@@ -255,7 +253,7 @@ int main(int argc, char **argv)
 				exit( EXIT_FAILURE) ;
 			}
 
-			mystrscpy( bp->b_fname, argv[ carg], sizeof bp->b_fname) ; /* max filename length limited to NFILEN - 1 */
+			strlcpy( bp->b_fname, argv[ carg], sizeof bp->b_fname) ; /* max filename length limited to NFILEN - 1 */
 			bp->b_active = FALSE;
 			if (firstfile) {
 				firstbp = bp;

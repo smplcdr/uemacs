@@ -39,7 +39,7 @@ struct video {
 	int v_rfcolor;		/* requested forground color */
 	int v_rbcolor;		/* requested background color */
 #endif
-	unicode_t v_text[] ;	/* Screen data. */
+	unicode_t v_text[1] ;	/* Screen data. */
 };
 
 #define VFCHG   0x0001		/* Changed flag                 */

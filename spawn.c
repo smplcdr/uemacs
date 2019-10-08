@@ -54,12 +54,12 @@ int spawncli(int f, int n)
 	TTclose();		/* stty to old settings */
 	TTkclose();		/* Close "keyboard" */
 	if ((cp = getenv("SHELL")) != NULL && *cp != '\0')
-		ue_system( cp) ;
+		em_system( cp) ;
 	else
 #if	BSD
 		system("exec /bin/csh");
 #else
-		ue_system( "exec /bin/sh") ;
+		em_system( "exec /bin/sh") ;
 #endif
 	sgarbf = TRUE;
 	usleep( 2000000L) ;
@@ -123,7 +123,7 @@ int spawn( int f, int n) {
 	TTflush();
 	TTclose();		/* stty to old modes    */
 	TTkclose();
-	ue_system( line) ;
+	em_system( line) ;
 	free( line) ;
 	fflush(stdout);		/* to be sure P.K.      */
 	TTopen();
@@ -163,7 +163,7 @@ int execprg( int f, int n) {
 	TTflush();
 	TTclose();		/* stty to old modes    */
 	TTkclose();
-	ue_system( line) ;
+	em_system( line) ;
 	free( line) ;
 	fflush(stdout);		/* to be sure P.K.      */
 	TTopen();
@@ -237,7 +237,7 @@ int pipecmd( int f, int n) {
 	TTkclose();
 	strcat( line, ">") ;
 	strcat( line, filnam) ;
-	ue_system( line) ;
+	em_system( line) ;
 	free( line) ;
 	TTopen();
 	TTkopen();
@@ -325,7 +325,7 @@ int filter_buffer( int f, int n) {
 	TTclose();		/* stty to old modes    */
 	TTkclose();
 	strcat(line, " <fltinp >fltout");
-	ue_system( line) ;
+	em_system( line) ;
 	free( line) ;
 	TTopen();
 	TTkopen();

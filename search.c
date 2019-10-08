@@ -684,7 +684,7 @@ int eq(unsigned char bc, unsigned char pc)
 }
 
 void setprompt( char *tpat, unsigned tpat_size, char *prompt, char *apat) {
-	mystrscpy( tpat, prompt, 15) ;	/* copy prompt to output string */
+	strlcpy( tpat, prompt, 15) ;	/* copy prompt to output string */
 	strcat( tpat, " (") ;			/* build new prompt string */
 	expandp( apat, &tpat[ strlen( tpat)], tpat_size) ;	/* add old pattern */
 	strcat( tpat, ")<Meta>: ") ;
@@ -716,7 +716,7 @@ static int readpattern(char *prompt, char *apat, int srch)
 	 */
 	status = newmlargt( &dynpat, tpat, NPAT) ;
 	if( status == TRUE) {
-		mystrscpy( apat, dynpat, NPAT) ;
+		strlcpy( apat, dynpat, NPAT) ;
 		free( dynpat) ;
 		if (srch) {	/* If we are doing the search string. */
 			/* Reverse string copy, and remember

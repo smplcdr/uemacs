@@ -225,7 +225,7 @@ int getfile( const char *fname, boolean lockfl) {
 			makename( bname, fname) ;
 			break ;
 		} else { /* TRUE */
-			mystrscpy( bname, new_bname, sizeof bname) ;
+			strlcpy( bname, new_bname, sizeof bname) ;
 			free( new_bname) ;
 		}
 	}
@@ -284,7 +284,7 @@ int readin(const char *fname, boolean lockfl)
 
 	bp->b_flag &= ~(BFINVS | BFCHG);
 	if( fname != bp->b_fname)	/* Copy if source differs from destination */
-		mystrscpy( bp->b_fname, fname, sizeof( fname_t)) ;
+		strlcpy( bp->b_fname, fname, sizeof( fname_t)) ;
 
 	/* let a user macro get hold of things...if he wants */
 	execute(META | SPEC | 'R', FALSE, 1);
@@ -562,7 +562,7 @@ int filename( int f, int n) {
 	else if( status == FALSE)
 		curbp->b_fname[ 0] = '\0' ;
 	else { /* TRUE */
-		mystrscpy( curbp->b_fname, fname, sizeof( fname_t)) ;
+		strlcpy( curbp->b_fname, fname, sizeof( fname_t)) ;
 		free( fname) ;
 	}
 

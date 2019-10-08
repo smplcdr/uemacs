@@ -1,7 +1,10 @@
-#ifndef UTIL_H_
-#define UTIL_H_
+#ifndef _UTIL_H
+#define _UTIL_H 1
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-void mystrscpy(char *dst, const char *src, int size);
+#include <stddef.h>
 
-#endif  /* UTIL_H_ */
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
+size_t strlcpy(char *__restrict dst, const char *__restrict src, size_t size);
+
+#endif /* _UTIL_H */

@@ -249,7 +249,7 @@ ask:
 	}
 
 /* copy buffer name to structure */
-	mystrscpy( curbp->b_bname, bufn, sizeof( bname_t)) ;
+	strlcpy( curbp->b_bname, bufn, sizeof( bname_t)) ;
 	free( bufn) ;
 	
 	curwp->w_flag |= WFMODE ;	/* make mode line replot */
@@ -374,6 +374,7 @@ static int makelist( int iflag)
 		struct line *lp ;
 		long nbytes ;		/* # of bytes in current buffer */
 		long nlines ;		/* # of lines in current buffer */
+		int len;
 
 	/* skip invisible buffers if iflag is false */
 		if (((bp->b_flag & BFINVS) != 0) && (iflag != TRUE))
@@ -412,14 +413,14 @@ static int makelist( int iflag)
 			*cp1++ = c;
 
 	/* Pad with spaces to max buffer name length */
-		int len = sizeof bp->b_bname ;
+		len = sizeof bp->b_bname ;
 		len -= utf8_disp_len( bp->b_bname) ;
 		while( len--)
 			*cp1++ = ' ' ;
 
 	/* Display filename if any */
 		if( bp->b_fname[ 0] != 0)
-			mystrscpy( cp1, bp->b_fname, &line[ sizeof line] - cp1) ;
+			strlcpy( cp1, bp->b_fname, &line[ sizeof line] - cp1) ;
 		else
 			*cp1 = 0 ;					/* Terminate string */
 
@@ -544,7 +545,7 @@ struct buffer *bfind( const char *bname, int cflag, int bflag)
 		bp->b_nwnd = 0;
 		bp->b_linep = lp;
 		bp->b_fname[ 0] = '\0' ;
-		mystrscpy( bp->b_bname, bname, sizeof( bname_t)) ;
+		strlcpy( bp->b_bname, bname, sizeof( bname_t)) ;
 		lp->l_fp = lp;
 		lp->l_bp = lp;
 	}

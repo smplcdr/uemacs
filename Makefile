@@ -23,10 +23,10 @@ uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 # CYGWIN_NT-6.1, CYGWIN_NT-6.1-WOW, CYGWIN_NT-6.1-WOW64, MINGW32_NT-6.1
 uname_S := $(shell sh -c 'echo $(uname_S) | sed s/_.*$$//')
 
-PROGRAM=ue
+PROGRAM=em
 
-CC=gcc
-WARNINGS=-pedantic -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter
+CC=gcc -std=gnu89 -march=native
+WARNINGS=-pedantic -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-function -Wno-implicit-fallthrough
 CFLAGS=-O2 $(WARNINGS)
 #CC=c89 +O3			# HP
 #CFLAGS= -D_HPUX_SOURCE -DSYSV
@@ -57,8 +57,8 @@ endif
 #LIBS=-ltermlib
 #LIBS=-L/usr/lib/termcap -ltermcap
 LFLAGS=-hbx
-BINDIR=/usr/bin
-LIBDIR=/usr/lib
+BINDIR=/usr/local/bin
+LIBDIR=/usr/local/lib
 
 $(PROGRAM): $(OBJ)
 	$(E) "  LINK    " $@
@@ -74,13 +74,16 @@ clean:
 	$(E) "  CLEAN"
 	$(Q) rm -f $(PROGRAM) core lintout makeout tags Makefile.bak *.o
 
-install: $(PROGRAM)
+install: $(PROGRAM) emacs.hlp emacs.rc
 	strip $(PROGRAM)
 	cp $(PROGRAM) ${BINDIR}
 	cp emacs.hlp ${LIBDIR}
 	cp emacs.rc ${LIBDIR}/.emacsrc
 	chmod 755 ${BINDIR}/$(PROGRAM)
 	chmod 644 ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
+
+uninstall: ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
+	rm -f ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
 
 lint:	${SRC}
 	@rm -f lintout
