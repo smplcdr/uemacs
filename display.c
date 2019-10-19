@@ -1155,7 +1155,7 @@ static void modeline(struct window *wp)
 		char *msg = NULL;
 		char tline[ 6] ;	/* buffer for part of mode line */
 
-		vtcol = n - 7;	/* strlen(" top ") plus a couple */
+		vtcol = n - sizeof(tline) - 1;	/* strlen(" top ") plus a couple */
 		while (rows--) {
 			lp = lforw(lp);
 			if (lp == wp->w_bufp->b_linep) {
@@ -1203,14 +1203,13 @@ static void modeline(struct window *wp)
 				tline[ 2] = ratio % 10 + '0' ;
 				tline[ 3] = '%' ;
 				tline[ 4] = ' ' ;
-				tline[ 5] = 0 ;
+				tline[ 5] = '\0' ;
 				if( tline[ 1] == '0')
 					tline[ 1] = ' ' ;
 
 				msg = tline;
 			}
 		}
-
 		n += vtputs( msg) ;
 	}
 }

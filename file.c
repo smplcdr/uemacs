@@ -351,7 +351,7 @@ int readin(const char *fname, boolean lockfl)
 		} else
 			errmsg = "" ;
 
-		mloutfmt( "(%sRead %d line%s, code/eol: %s/%s)",
+		mloutfmt( "(%sRead %d line%s, code: %s, EOL: %s)",
 			errmsg,
 			nline,
 			&"s"[ nline == 1],

@@ -2,11 +2,11 @@
 #define __RETCODE_H__
 
 #ifdef	FALSE
-#error "FALSE shouldn't be defined"
+#error "FALSE should not be defined"
 #undef	FALSE
 #endif
 #ifdef	TRUE
-#error "TRUE shouldn't be defined"
+#error "TRUE should not be defined"
 #undef	TRUE
 #endif
 

@@ -33,7 +33,7 @@ struct buffer *blistp ;		/* Buffer for C-X C-B           */
 const char *modename[] = {	/* name of modes                */
 	"Wrap", "Cmode", "Exact", "View", "Over",
 	"Magic",
-	"Asave", "Utf-8", "Dos"
+	"Asave", "UTF-8", "DOS"
 } ;
 
 int gmode = 0 ;			/* global editor mode           */

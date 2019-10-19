@@ -9,7 +9,8 @@ static void mloutdump( const char *buf, ...) {
 void (*mloutfmt)( const char *, ...) = mloutdump ;
 
 void mloutstr( const char *str) {
-	mloutfmt( (*str) ? "%s" : "", str) ;
+	if (*str != '\0')
+		mloutfmt("%s", str) ;
 }
 
 /* end of mlout.c */
