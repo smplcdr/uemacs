@@ -38,7 +38,7 @@ static const char *cname[] = {						/* names of colors */
 int gfcolor = NCOLORS - 1 ;	/* global forgrnd color (white)  */
 int gbcolor = 0 ;		/* global backgrnd color (black) */
 
-boolean hardtab = TRUE ;	/* use hard tab instead of soft tab */
+int hardtab = TRUE ;	/* use hard tab instead of soft tab */
 int fillcol = 72 ;		/* Current fill column           */
 
 /* uninitialized global definitions */
@@ -116,7 +116,7 @@ int showcpos(int f, int n)
 
 	ratio = 0;		/* Ratio before dot. */
 	if (numchars != 0)
-		ratio = (100L * predchars) / numchars;
+		ratio = (int) ((100L * predchars) / numchars);
 
 	/* summarize and report the info */
 	mlwrite("Line %d/%d Col %d/%d Char %D/%D (%d%%) char = %s%x",
@@ -181,7 +181,7 @@ int getccol(int bflg)
  *
  * int pos;		position to set cursor
  */
-boolean setccol( int pos) {
+int setccol( int pos) {
 	int i;		/* index into current line */
 	int col;	/* current cursor column   */
 	int llen;	/* length of line in bytes */
@@ -221,10 +221,10 @@ boolean setccol( int pos) {
  * work. This fixes up a very common typo with a single stroke. Normally bound
  * to "C-T". This always works within a line, so "WFEDIT" is good enough.
  */
-boolean twiddle( int f, int n) {
+int twiddle( int f, int n) {
 	unicode_t	c ;
 	int	len ;
-	boolean eof_f = FALSE ;
+	int eof_f = FALSE ;
 
 	if( curbp->b_mode & MDVIEW)	/* don't allow this command if      */
 		return rdonly() ;		/* we are in read only mode     */

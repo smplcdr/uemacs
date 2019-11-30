@@ -30,19 +30,19 @@ extern int tabwidth ;	/* Map to $tab, default to 8, can be set to [1, .. */
 
 char *getkill( void) ;
 
-boolean backchar( int f, int n) ;
-boolean forwchar( int f, int n) ;
+int backchar( int f, int n) ;
+int forwchar( int f, int n) ;
 
 void lfree( line_p lp) ;
 void lchange( int flag) ;
 int insspace( int f, int n) ;
 int linstr( char *instr) ;
 int linsert( int n, unicode_t c) ;
-boolean linsert_byte( int n, int c) ;
+int linsert_byte( int n, int c) ;
 int lover( char *ostr) ;
 int lnewline( void) ;
-boolean ldelete(  long n, boolean kflag) ;
-boolean ldelchar( long n, boolean kflag) ;
+int ldelete(  long n, int kflag) ;
+int ldelchar( long n, int kflag) ;
 int lgetchar( unicode_t *) ;
 char *getctext( void) ;
 void kdelete( void) ;
@@ -50,6 +50,6 @@ int kinsert( int c) ;
 int yank( int f, int n) ;
 line_p lalloc( int minsize) ;  /* Allocate a line of at least minsize chars. */
 
-boolean rdonly( void) ;		/* Read Only error message */
+int rdonly( void) ;		/* Read Only error message */
 
 #endif  /* LINE_H_ */

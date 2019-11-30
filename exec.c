@@ -29,7 +29,7 @@
 
 
 static char *execstr = NULL ;	/* pointer to string to execute */
-boolean clexec = FALSE ;    /* command line execution flag  */
+int clexec = FALSE ;    /* command line execution flag  */
 
 
 
@@ -147,7 +147,7 @@ static int docmd( char *cline) {
     int n;      /* numeric repeat value */
     fn_t fnc;       /* function to execute */
     int status;     /* return status of function */
-    boolean oldcle ;    /* old contents of clexec flag */
+    int oldcle ;    /* old contents of clexec flag */
     char *oldestr;      /* original exec string */
     char tkn[NSTRING];  /* next token off of command line */
 
@@ -212,7 +212,7 @@ static int docmd( char *cline) {
  * char **tokref	out, destination of newly allocated token string
  */
 static char *newtoken( char *src, char **tokref) {
-    boolean quotef ;	/* is the current string quoted? */
+    int quotef ;	/* is the current string quoted? */
     char	*tok ;		/* allocated string */
     int		size ;		/* allocated size */
     int		idx = 0 ;	/* insertion point into token string */
@@ -325,7 +325,7 @@ static char *getnewtoken( void) {
 	return tok ;
 }
 
-boolean gettokval( char *tok, int size) {
+int gettokval( char *tok, int size) {
 	char *tmpbuf ;
 
     /* grab token and advance past */
@@ -366,7 +366,7 @@ char *getnewtokval( void) {
  */
 static int macarg( char *tok, int toksz) {
 	int status ;
-	boolean savcle ;	/* buffer to store original clexec */
+	int savcle ;	/* buffer to store original clexec */
 
 	savcle = clexec ;	/* save execution mode */
 	clexec = TRUE ;		/* get the argument */

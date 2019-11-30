@@ -128,7 +128,7 @@ int forwword( int f, int n) {
 
 /* Word capitalize, to upper and to lower
 */
-static boolean uniflip( boolean toupper_f) {	/* flip unicode case and forward */
+static int uniflip( int toupper_f) {	/* flip unicode case and forward */
 	unicode_t	c ;
 	int	len ;
 
@@ -149,7 +149,7 @@ static boolean uniflip( boolean toupper_f) {	/* flip unicode case and forward */
 	return TRUE ;
 }
 
-static boolean capcapword( int n, boolean first_f, boolean rest_f) {
+static int capcapword( int n, int first_f, int rest_f) {
 	if( curbp->b_mode & MDVIEW)	/* don't allow this command if      */
 		return rdonly() ;		/* we are in read only mode     */
 

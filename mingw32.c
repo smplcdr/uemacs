@@ -61,9 +61,9 @@ struct terminal term = {
 int ttrow ;		/* Row location of HW cursor */
 int ttcol ;		/* Column location of HW cursor */
 
-boolean eolexist = TRUE ;	/* does clear to EOL exist?     */
-boolean revexist = FALSE ;	/* does reverse video exist?    */
-boolean sgarbf = TRUE ;		/* State of screen unknown      */
+int eolexist = TRUE ;	/* does clear to EOL exist?     */
+int revexist = FALSE ;	/* does reverse video exist?    */
+int sgarbf = TRUE ;		/* State of screen unknown      */
 
 char sres[ 16] ;	        /* Current screen resolution.   */
 							/* NORMAL, CGA, EGA, VGA	*/

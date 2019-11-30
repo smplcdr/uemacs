@@ -92,7 +92,7 @@ char *getkill( void) {
  * location. Error if you try and move out of the buffer. Set the flag if the
  * line pointer for dot changes.
  */
-boolean backchar( int f, int n) {
+int backchar( int f, int n) {
 	assert( f == TRUE || (f == FALSE && n == 1)) ;
 	if( n < 0)
 		return forwchar( f, -n) ;
@@ -126,7 +126,7 @@ boolean backchar( int f, int n) {
  * location, and move ".". Error if you try and move off the end of the
  * buffer. Set the flag if the line pointer for dot changes.
  */
-boolean forwchar( int f, int n) {
+int forwchar( int f, int n) {
 	assert( f == TRUE || (f == FALSE && n == 1)) ;
 	if( n < 0)
 		return backchar( f, -n) ;
@@ -291,7 +291,7 @@ int linstr( char *instr) {
  * well, and FALSE on errors.
  */
 
-boolean linsert_byte( int n, int c) {
+int linsert_byte( int n, int c) {
 	char *cp1;
 	char *cp2;
 	struct line *lp1;
@@ -513,7 +513,7 @@ int lgetchar( unicode_t *c) {
  *
  * If you want to delete characters, use ldelchar().
  */
-boolean ldelchar( long n, boolean kflag) {
+int ldelchar( long n, int kflag) {
 /* testing for read only mode is done by ldelete() */
 	while (n-- > 0) {
 		unicode_t c;
@@ -532,7 +532,7 @@ boolean ldelchar( long n, boolean kflag) {
  * long n;		# of chars to delete
  * int kflag;		 put killed text in kill buffer flag
  */
-boolean ldelete( long n, boolean kflag) {
+int ldelete( long n, int kflag) {
 	char *cp1;
 	char *cp2;
 	struct line *dotp;
@@ -828,7 +828,7 @@ int yank(int f, int n)
  * tell the user that this command is illegal while we are in
  * VIEW (read-only) mode
  */
-boolean rdonly( void) {
+int rdonly( void) {
 	mloutfmt( "%B(Key illegal in VIEW mode)") ;
 	return FALSE ;
 }

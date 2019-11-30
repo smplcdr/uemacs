@@ -777,7 +777,7 @@ void savematch(void)
  */
 void rvstrcpy(char *rvstr, char *str)
 {
-	int i;
+	size_t i;
 
 	str += (i = strlen(str));
 
@@ -820,7 +820,7 @@ int qreplace(int f, int n)
 static int replaces(int kind, int f, int n)
 {
 	int status;	/* success flag on pattern inputs */
-	int rlength;	/* length of replacement string */
+	size_t rlength;	/* length of replacement string */
 	int numsub;	/* number of substitutions */
 	int nummatch;	/* number of found matches */
 	int nlflag;		/* last char of search string a <NL>? */
@@ -1037,7 +1037,7 @@ qprompt:
  *	then either insert the string directly, or make use of
  *	replacement meta-array.
  */
-int delins(int dlength, char *instr, int use_meta)
+int delins(size_t dlength, char *instr, int use_meta)
 {
 	int status;
 #if	MAGIC

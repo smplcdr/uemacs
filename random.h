@@ -8,7 +8,7 @@
 #define AEDIT 1
 
 extern int fillcol ;	/* Fill column                  */
-extern boolean	hardtab ;	/* Use hard tab instead of soft tab */
+extern int	hardtab ;	/* Use hard tab instead of soft tab */
 
 
 /* Uninitialized global external declarations. */
@@ -23,8 +23,8 @@ int setfillcol( int f, int n) ;
 int showcpos( int f, int n) ;
 int getcline( void) ;
 int getccol( int bflg) ;
-boolean setccol( int pos) ;
-boolean twiddle( int f, int n) ;
+int setccol( int pos) ;
+int twiddle( int f, int n) ;
 int quote( int f, int n) ;
 int insert_tab( int f, int n) ;
 #if AEDIT

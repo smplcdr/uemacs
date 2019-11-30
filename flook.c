@@ -31,7 +31,7 @@ const char *pathname[] = {
  *
  * char *fname;     file to check for existance
  */
-boolean fexist( const char *fname)
+int fexist( const char *fname)
 {
     FILE *fp;
 
@@ -53,9 +53,9 @@ boolean fexist( const char *fname)
  * asked and possible
  *
  * char *fname;		base file name to search for
- * boolean hflag;		Look in the HOME environment variable first?
+ * int hflag;		Look in the HOME environment variable first?
  */
-char *flook( const char *fname, boolean hflag)
+char *flook( const char *fname, int hflag)
 {
 	unsigned i ;	/* index */
 	int len ;

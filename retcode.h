@@ -10,11 +10,8 @@
 #undef	TRUE
 #endif
 
-typedef enum {
-	FALSE,			/* 0, false, no, bad, etc.		*/
-	TRUE			/* 1, true, yes, good, etc.		*/
-} boolean ;
-
-#define ABORT 2		/* 2, death, ^G, abort, etc.	*/
+#define FALSE 0 /* 0, false, no, bad, etc.  */
+#define TRUE  1 /* 1, true, yes, good, etc.  */
+#define ABORT 2	/* 2, death, ^G, abort, etc.  */
 
 #endif

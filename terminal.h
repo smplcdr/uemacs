@@ -75,9 +75,9 @@ extern struct terminal term ;
 extern int ttrow ;		/* Row location of HW cursor */
 extern int ttcol ;		/* Column location of HW cursor */
 
-extern boolean eolexist ;	/* does clear to EOL exist?     */
-extern boolean revexist ;	/* does reverse video exist?    */
-extern boolean sgarbf ;		/* State of screen unknown      */
+extern int eolexist ;	/* does clear to EOL exist?     */
+extern int revexist ;	/* does reverse video exist?    */
+extern int sgarbf ;		/* State of screen unknown      */
 
 extern char sres[] ;	        /* Current screen resolution.   */
 				/* NORMAL, CGA, EGA, VGA	*/

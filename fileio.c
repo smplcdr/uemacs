@@ -26,7 +26,7 @@ int		fpayload ;			/* actual length of fline content */
 
 
 static FILE		*ffp ;		/* File pointer, all functions. */
-static boolean	eofflag ;	/* end-of-file flag */
+static int	eofflag ;	/* end-of-file flag */
 
 
 /*

@@ -53,13 +53,13 @@ static const char *codename[] = {
 	"MIXED"
 } ;
 
-boolean restflag = FALSE ;	/* restricted use?				*/
+int restflag = FALSE ;	/* restricted use?				*/
 
 
 static int ifile( const char *fname) ;
 
 
-boolean resterr( void) {
+int resterr( void) {
 	mloutfmt( "%B(That command is RESTRICTED)") ;
 	return FALSE ;
 }
@@ -175,9 +175,9 @@ int viewfile( int f, int n) {	/* visit a file in VIEW mode */
  * getfile()
  *
  * char fname[];	file name to find
- * boolean lockfl;		check the file for locks?
+ * int lockfl;		check the file for locks?
  */
-int getfile( const char *fname, boolean lockfl) {
+int getfile( const char *fname, int lockfl) {
 	struct buffer *bp;
 	int s;
 	bname_t bname ;  /* buffer name to put file */
@@ -257,9 +257,9 @@ int getfile( const char *fname, boolean lockfl) {
  * and before it is read.
  *
  * char fname[];	name of file to read
- * boolean lockfl;		check for file locks?
+ * int lockfl;		check for file locks?
  */
-int readin(const char *fname, boolean lockfl)
+int readin(const char *fname, int lockfl)
 {
 	struct window *wp;
 	struct buffer *bp;

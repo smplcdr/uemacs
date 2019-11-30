@@ -162,9 +162,9 @@ void ttflush(void)
 int ttgetc(void)
 {
 	static char buffer[32];
-	static int pending;
+	static ssize_t pending;
 	unicode_t c;
-	int count, bytes = 1, expected;
+	ssize_t count, bytes = 1, expected;
 
 	count = pending;
 	if (!count) {

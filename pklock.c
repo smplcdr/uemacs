@@ -47,7 +47,8 @@ char *cuserid( char *retbuf) ;	/* should have been declared in stdio.h */
  *********************/
 char *dolock( const char *fname)
 {
-	int fd, n;
+	int fd;
+	ssize_t n;
 	char lname[ MAXLOCK] ;
 	static char locker[ MAXNAME + 1] ;
 	int mask;
@@ -98,7 +99,8 @@ char *dolock( const char *fname)
 		strcat(locker + strlen(locker), "@");
 		gethostname(locker + strlen(locker), 64);
 		{
-			int ret, locker_size ;
+			ssize_t ret;
+			size_t locker_size ;
 
 			locker_size = strlen( locker) ;
 			ret = write( fd, locker, locker_size) ;

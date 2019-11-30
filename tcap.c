@@ -30,9 +30,9 @@
 
 #if TERMCAP
 
-boolean eolexist = TRUE ;	/* does clear to EOL exist      */
-boolean revexist = FALSE ;	/* does reverse video exist?    */
-boolean sgarbf = TRUE ;		/* TRUE if screen is garbage    */
+int eolexist = TRUE ;	/* does clear to EOL exist      */
+int revexist = FALSE ;	/* does reverse video exist?    */
+int sgarbf = TRUE ;		/* TRUE if screen is garbage    */
 
 char sres[ 16] ;		/* current screen resolution    */
 				/* NORMAL, CGA, EGA, VGA	*/

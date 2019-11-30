@@ -3,6 +3,7 @@
 
 #define MAGIC	1	/* include regular expression matching? */
 
+#include <stddef.h>
 #include "line.h"
 
 typedef char spat_t[ 128] ;		/* search pattern type */
@@ -35,7 +36,7 @@ void savematch( void) ;
 void rvstrcpy( char *rvstr, char *str) ;
 int sreplace( int f, int n) ;
 int qreplace( int f, int n) ;
-int delins( int dlength, char *instr, int use_meta) ;
+int delins( size_t dlength, char *instr, int use_meta) ;
 int expandp( char *srcstr, char *deststr, int maxlength) ;
 int boundry( struct line *curline, int curoff, int dir) ;
 

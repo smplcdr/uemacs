@@ -528,10 +528,10 @@ int getstring( const char *prompt, char *buf, int nbuf, int eolchar)
 {
     int cpos;   /* current character position in string */
     int c;
-    boolean quote_f ;    /* are we quoting the next char? */
+    int quote_f ;    /* are we quoting the next char? */
 	int retval ;		/* TRUE, FALSE, ABORT */
 #if COMPLC
-	boolean file_f ;
+	int file_f ;
     int ocpos, nskip = 0, didtry = 0;
 #if     MSDOS
     struct ffblk ffblk;

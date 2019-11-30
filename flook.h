@@ -7,6 +7,6 @@
 extern const char *pathname[] ;
 
 
-boolean fexist( const char *fname) ;
-char *flook( const char *fname, boolean hflag) ;
+int fexist( const char *fname) ;
+char *flook( const char *fname, int hflag) ;
 

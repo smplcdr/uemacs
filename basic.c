@@ -68,7 +68,7 @@ static unsigned getgoal( line_p dlp) {
 /*
  * Move the cursor to the beginning of the current line of active window.
  */
-boolean gotobol( int f, int n) {
+int gotobol( int f, int n) {
 	curwp->w_doto = 0 ;
 	return TRUE ;
 }
@@ -76,7 +76,7 @@ boolean gotobol( int f, int n) {
 /*
  * Move the cursor to the end of the current line of active window.
  */
-boolean gotoeol( int f, int n) {
+int gotoeol( int f, int n) {
 	curwp->w_doto = llength( curwp->w_dotp) ;
 	return TRUE ;
 }
@@ -86,7 +86,7 @@ boolean gotoeol( int f, int n) {
  * considered to be hard motion; it really isn't if the original value of dot
  * is the same as the new value of dot. Normally bound to "M-<".
  */
-boolean gotobob( int f, int n) {
+int gotobob( int f, int n) {
 	curwp->w_dotp = lforw( curbp->b_linep) ;
 	curwp->w_doto = 0 ;
 	curwp->w_flag |= WFHARD ;
@@ -98,7 +98,7 @@ boolean gotobob( int f, int n) {
  * (ZJ). The standard screen code does most of the hard parts of update.
  * Bound to "M->".
  */
-boolean gotoeob( int f, int n) {
+int gotoeob( int f, int n) {
 	curwp->w_dotp = curbp->b_linep ;
 	curwp->w_doto = 0 ;
 	curwp->w_flag |= WFHARD ;
@@ -111,7 +111,7 @@ boolean gotoeob( int f, int n) {
  * controls how the goal column is set. Bound to "C-N". No errors are
  * possible.
  */
-boolean forwline( int f, int n) {
+int forwline( int f, int n) {
 	line_p dlp ;
 
 	if (n < 0)
@@ -148,7 +148,7 @@ boolean forwline( int f, int n) {
  * alternate. Figure out the new line and call "movedot" to perform the
  * motion. No errors are possible. Bound to "C-P".
  */
-boolean backline( int f, int n) {
+int backline( int f, int n) {
 	line_p dlp ;
 
 	if (n < 0)
@@ -222,7 +222,7 @@ int gotoline( int f, int n) {
  * the overlap; this value is the default overlap value in ITS EMACS. Because
  * this zaps the top line in the display window, we have to do a hard update.
  */
-boolean forwpage( int f, int n) {
+int forwpage( int f, int n) {
 	line_p lp ;
 
 	if (f == FALSE) {
@@ -271,7 +271,7 @@ boolean forwpage( int f, int n) {
  * EMACS manual. Bound to "M-V". We do a hard update for exactly the same
  * reason.
  */
-boolean backpage( int f, int n) {
+int backpage( int f, int n) {
 	line_p lp ;
 
 	if (f == FALSE) {	/* interactive, default n = 1 supplied */
@@ -326,7 +326,7 @@ boolean backpage( int f, int n) {
  * Set the mark in the current window to the value of "." in the window. No
  * errors are possible. Bound to "M-.".
  */
-boolean setmark( int f, int n) {
+int setmark( int f, int n) {
 	curwp->w_markp = curwp->w_dotp;
 	curwp->w_marko = curwp->w_doto;
 	mloutstr( "(Mark set)") ;
@@ -339,7 +339,7 @@ boolean setmark( int f, int n) {
  * that moves the mark about. The only possible error is "no mark". Bound to
  * "C-X C-X".
  */
-boolean swapmark( int f, int n) {
+int swapmark( int f, int n) {
 	line_p odotp ;
 	int odoto;
 
