@@ -3,14 +3,18 @@
 #include "mlout.h"
 
 /* by default just use a stub */
-static void mloutdump( const char *buf, ...) {
+static void
+mloutdump (const char *buf, ...)
+{
 }
 
-void (*mloutfmt)( const char *, ...) = mloutdump ;
+void (*mloutfmt) (const char *, ...) = mloutdump;
 
-void mloutstr( const char *str) {
-	if (*str != '\0')
-		mloutfmt("%s", str) ;
+void
+mloutstr (const char *str)
+{
+  if (*str != '\0')
+    mloutfmt ("%s", str);
 }
 
 /* end of mlout.c */

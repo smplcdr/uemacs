@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 
-void xmkstemp( char *fname_template) ;
+void xmkstemp (char *fname_template);
 
-void *xmalloc( size_t size) ;
+void *xmalloc (size_t size);
 
-#endif  /* WRAPPER_H_ */
+#endif /* WRAPPER_H_ */

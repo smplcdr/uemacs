@@ -1,17 +1,17 @@
 #ifndef __RETCODE_H__
 #define __RETCODE_H__
 
-#ifdef	FALSE
+#ifdef FALSE
 #error "FALSE should not be defined"
-#undef	FALSE
+#undef FALSE
 #endif
-#ifdef	TRUE
+#ifdef TRUE
 #error "TRUE should not be defined"
-#undef	TRUE
+#undef TRUE
 #endif
 
 #define FALSE 0 /* 0, false, no, bad, etc.  */
-#define TRUE  1 /* 1, true, yes, good, etc.  */
-#define ABORT 2	/* 2, death, ^G, abort, etc.  */
+#define TRUE 1  /* 1, true, yes, good, etc.  */
+#define ABORT 2 /* 2, death, ^G, abort, etc.  */
 
 #endif

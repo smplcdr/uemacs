@@ -7,8 +7,8 @@
 
 #if (FILOCK && BSD) || SVR4
 
-char *dolock( const char *fname) ;
-char *undolock( const char *fname) ;
+char *dolock (const char *fname);
+char *undolock (const char *fname);
 
 #endif
 

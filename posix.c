@@ -28,8 +28,8 @@
 #include "retcode.h"
 #include "utf8.h"
 
-int ttrow = HUGE ;		/* Row location of HW cursor */
-int ttcol = HUGE ;		/* Column location of HW cursor */
+int ttrow = HUGE; /* Row location of HW cursor */
+int ttcol = HUGE; /* Column location of HW cursor */
 
 /* Since Mac OS X's termios.h doesn't have the following 2 macros, define them.
  */
@@ -44,62 +44,60 @@ int ttcol = HUGE ;		/* Column location of HW cursor */
 #define PENDIN 0
 #endif
 
-static int kbdflgs;			/* saved keyboard fd flags      */
-static int kbdpoll;			/* in O_NDELAY mode             */
+static int kbdflgs; /* saved keyboard fd flags      */
+static int kbdpoll; /* in O_NDELAY mode             */
 
-static struct termios otermios;		/* original terminal characteristics */
-static struct termios ntermios;		/* charactoristics to use inside */
+static struct termios otermios; /* original terminal characteristics */
+static struct termios ntermios; /* charactoristics to use inside */
 
 #define TBUFSIZ 128
-static char tobuf[TBUFSIZ];		/* terminal output buffer */
-
+static char tobuf[TBUFSIZ]; /* terminal output buffer */
 
 /*
  * This function is called once to set up the terminal device streams.
  * On CPM it is a no-op.
  */
-void ttopen(void)
+void
+ttopen (void)
 {
-	tcgetattr(0, &otermios);	/* save old settings */
+  tcgetattr (0, &otermios); /* save old settings */
 
-	/*
-	 * base new settings on old ones - don't change things
-	 * we don't know about
-	 */
-	ntermios = otermios;
+  /*
+   * base new settings on old ones - don't change things
+   * we don't know about
+   */
+  ntermios = otermios;
 
-	/* raw CR/NL etc input handling, but keep ISTRIP if we're on a 7-bit line */
-	ntermios.c_iflag &= ~(IGNBRK | BRKINT | IGNPAR | PARMRK
-				| IXON | IXOFF | IXANY
-			      | INPCK | INLCR | IGNCR | ICRNL);
+  /* raw CR/NL etc input handling, but keep ISTRIP if we're on a 7-bit line */
+  ntermios.c_iflag &= ~(IGNBRK | BRKINT | IGNPAR | PARMRK | IXON | IXOFF
+                        | IXANY | INPCK | INLCR | IGNCR | ICRNL);
 
-	/* raw CR/NR etc output handling */
-	ntermios.c_oflag &=
-	    ~(OPOST | ONLCR | OLCUC | OCRNL | ONOCR | ONLRET);
+  /* raw CR/NR etc output handling */
+  ntermios.c_oflag &= ~(OPOST | ONLCR | OLCUC | OCRNL | ONOCR | ONLRET);
 
-	/* No signal handling, no echo etc */
-	ntermios.c_lflag &= ~(ISIG | ICANON | XCASE | ECHO | ECHOE | ECHOK
-			      | ECHONL | NOFLSH | TOSTOP | ECHOCTL |
-			      ECHOPRT | ECHOKE | FLUSHO | PENDIN | IEXTEN);
+  /* No signal handling, no echo etc */
+  ntermios.c_lflag
+      &= ~(ISIG | ICANON | XCASE | ECHO | ECHOE | ECHOK | ECHONL | NOFLSH
+           | TOSTOP | ECHOCTL | ECHOPRT | ECHOKE | FLUSHO | PENDIN | IEXTEN);
 
-	/* one character, no timeout */
-	ntermios.c_cc[VMIN] = 1;
-	ntermios.c_cc[VTIME] = 0;
-	tcsetattr(0, TCSADRAIN, &ntermios);	/* and activate them */
+  /* one character, no timeout */
+  ntermios.c_cc[VMIN] = 1;
+  ntermios.c_cc[VTIME] = 0;
+  tcsetattr (0, TCSADRAIN, &ntermios); /* and activate them */
 
-	/*
-	 * provide a smaller terminal output buffer so that
-	 * the type ahead detection works better (more often)
-	 */
-	setbuffer(stdout, &tobuf[0], TBUFSIZ);
+  /*
+   * provide a smaller terminal output buffer so that
+   * the type ahead detection works better (more often)
+   */
+  setbuffer (stdout, &tobuf[0], TBUFSIZ);
 
-	kbdflgs = fcntl(0, F_GETFL, 0);
-	kbdpoll = FALSE;
+  kbdflgs = fcntl (0, F_GETFL, 0);
+  kbdpoll = FALSE;
 
-	/* on all screens we are not sure of the initial position
-	   of the cursor                                        */
-	ttrow = 999;
-	ttcol = 999;
+  /* on all screens we are not sure of the initial position
+     of the cursor                                        */
+  ttrow = 999;
+  ttcol = 999;
 }
 
 /*
@@ -107,9 +105,10 @@ void ttopen(void)
  * interpreter.
  * Another no-operation on CPM.
  */
-void ttclose(void)
+void
+ttclose (void)
 {
-	tcsetattr(0, TCSADRAIN, &otermios);	/* restore terminal settings */
+  tcsetattr (0, TCSADRAIN, &otermios); /* restore terminal settings */
 }
 
 /*
@@ -117,41 +116,46 @@ void ttclose(void)
  * On CPM terminal I/O unbuffered, so we just write the byte out. Ditto on
  * MS-DOS (use the very very raw console output routine).
  */
-int ttputc( unicode_t c) {
-	char utf8[6];
-	int bytes;
+int
+ttputc (unicode_t c)
+{
+  char utf8[6];
+  int bytes;
 
-	bytes = unicode_to_utf8(c, utf8);
-	fwrite(utf8, 1, bytes, stdout);
-	return 0;
+  bytes = unicode_to_utf8 (c, utf8);
+  fwrite (utf8, 1, bytes, stdout);
+  return 0;
 }
 
 /*
  * Flush terminal buffer. Does real work where the terminal output is buffered
  * up. A no-operation on systems where byte at a time terminal I/O is done.
  */
-void ttflush(void)
+void
+ttflush (void)
 {
-/*
- * Add some terminal output success checking, sometimes an orphaned
- * process may be left looping on SunOS 4.1.
- *
- * How to recover here, or is it best just to exit and lose
- * everything?
- *
- * jph, 8-Oct-1993
- * Jani Jaakkola suggested using select after EAGAIN but let's just wait a bit
- *
- */
-	int status;
+  /*
+   * Add some terminal output success checking, sometimes an orphaned
+   * process may be left looping on SunOS 4.1.
+   *
+   * How to recover here, or is it best just to exit and lose
+   * everything?
+   *
+   * jph, 8-Oct-1993
+   * Jani Jaakkola suggested using select after EAGAIN but let's just wait a
+   * bit
+   *
+   */
+  int status;
 
-	status = fflush(stdout);
-	while (status < 0 && errno == EAGAIN) {
-		sleep(1);
-		status = fflush(stdout);
-	}
-	if (status < 0)
-		exit(15);
+  status = fflush (stdout);
+  while (status < 0 && errno == EAGAIN)
+    {
+      sleep (1);
+      status = fflush (stdout);
+    }
+  if (status < 0)
+    exit (15);
 }
 
 /*
@@ -159,96 +163,102 @@ void ttflush(void)
  * at all.
  * Very simple on CPM, because the system can do exactly what you want.
  */
-int ttgetc(void)
+int
+ttgetc (void)
 {
-	static char buffer[32];
-	static ssize_t pending;
-	unicode_t c;
-	ssize_t count, bytes = 1, expected;
+  static char buffer[32];
+  static ssize_t pending;
+  unicode_t c;
+  ssize_t count, bytes = 1, expected;
 
-	count = pending;
-	if (!count) {
-		count = read(0, buffer, sizeof(buffer));
-		if (count <= 0)
-			return 0;
-		pending = count;
-	}
+  count = pending;
+  if (!count)
+    {
+      count = read (0, buffer, sizeof (buffer));
+      if (count <= 0)
+        return 0;
+      pending = count;
+    }
 
-	c = (unsigned char) buffer[0];
-	if (c >= 32 && c < 128)
-		goto done;
+  c = (unsigned char)buffer[0];
+  if (c >= 32 && c < 128)
+    goto done;
 
-	/*
-	 * Lazy. We don't bother calculating the exact
-	 * expected length. We want at least two characters
-	 * for the special character case (ESC+[) and for
-	 * the normal short UTF8 sequence that starts with
-	 * the 110xxxxx pattern.
-	 *
-	 * But if we have any of the other patterns, just
-	 * try to get more characters. At worst, that will
-	 * just result in a barely perceptible 0.1 second
-	 * delay for some *very* unusual utf8 character
-	 * input.
-	 */
-	expected = 2;
-	if ((c & 0xe0) == 0xe0)
-		expected = 6;
+  /*
+   * Lazy. We don't bother calculating the exact
+   * expected length. We want at least two characters
+   * for the special character case (ESC+[) and for
+   * the normal short UTF8 sequence that starts with
+   * the 110xxxxx pattern.
+   *
+   * But if we have any of the other patterns, just
+   * try to get more characters. At worst, that will
+   * just result in a barely perceptible 0.1 second
+   * delay for some *very* unusual utf8 character
+   * input.
+   */
+  expected = 2;
+  if ((c & 0xe0) == 0xe0)
+    expected = 6;
 
-	/* Special character - try to fill buffer */
-	if (count < expected) {
-		int n;
-		ntermios.c_cc[VMIN] = 0;
-		ntermios.c_cc[VTIME] = 1;		/* A .1 second lag */
-		tcsetattr(0, TCSANOW, &ntermios);
+  /* Special character - try to fill buffer */
+  if (count < expected)
+    {
+      int n;
+      ntermios.c_cc[VMIN] = 0;
+      ntermios.c_cc[VTIME] = 1; /* A .1 second lag */
+      tcsetattr (0, TCSANOW, &ntermios);
 
-		n = read(0, buffer + count, sizeof(buffer) - count);
+      n = read (0, buffer + count, sizeof (buffer) - count);
 
-		/* Undo timeout */
-		ntermios.c_cc[VMIN] = 1;
-		ntermios.c_cc[VTIME] = 0;
-		tcsetattr(0, TCSANOW, &ntermios);
+      /* Undo timeout */
+      ntermios.c_cc[VMIN] = 1;
+      ntermios.c_cc[VTIME] = 0;
+      tcsetattr (0, TCSANOW, &ntermios);
 
-		if (n > 0)
-			pending += n;
-	}
-	if (pending > 1) {
-		unsigned char second = buffer[1];
+      if (n > 0)
+        pending += n;
+    }
+  if (pending > 1)
+    {
+      unsigned char second = buffer[1];
 
-		/* Turn ESC+'[' into CSI */
-		if (c == 27 && second == '[') {
-			bytes = 2;
-			c = 128+27;
-			goto done;
-		}
-	}
-	bytes = utf8_to_unicode(buffer, 0, pending, &c);
+      /* Turn ESC+'[' into CSI */
+      if (c == 27 && second == '[')
+        {
+          bytes = 2;
+          c = 128 + 27;
+          goto done;
+        }
+    }
+  bytes = utf8_to_unicode (buffer, 0, pending, &c);
 
 done:
-	pending -= bytes;
-	memmove(buffer, buffer+bytes, pending);
-	return c;
+  pending -= bytes;
+  memmove (buffer, buffer + bytes, pending);
+  return c;
 }
 
 /* typahead:	Check to see if any characters are already in the
-		keyboard buffer
+                keyboard buffer
 */
 
-int typahead(void)
+int
+typahead (void)
 {
-	int x;			/* holds # of pending chars */
+  int x; /* holds # of pending chars */
 
 #ifdef FIONREAD
-	if (ioctl(0, FIONREAD, &x) < 0)
-		x = 0;
+  if (ioctl (0, FIONREAD, &x) < 0)
+    x = 0;
 #else
-	x = 0;
+  x = 0;
 #endif
-	return x;
+  return x;
 }
 
 #else
-typedef void _pedantic_empty_translation_unit ;
-#endif              /* not POSIX */
+typedef void _pedantic_empty_translation_unit;
+#endif /* not POSIX */
 
 /* end of posix.c */

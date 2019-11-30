@@ -3,9 +3,9 @@
 #ifndef __MLOUT_H__
 #define __MLOUT_H__
 
-extern void (*mloutfmt)( const char *, ...) ;
+extern void (*mloutfmt) (const char *, ...);
 
-void mloutstr( const char *str) ;
+void mloutstr (const char *str);
 
 #endif /* __MLOUT_H__ */
 
