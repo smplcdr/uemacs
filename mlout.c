@@ -6,6 +6,7 @@
 static void
 mloutdump (const char *buf, ...)
 {
+  return;
 }
 
 void (*mloutfmt) (const char *, ...) = mloutdump;

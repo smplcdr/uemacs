@@ -1,12 +1,12 @@
 /* eval.c -- implements eval.h */
 #include "eval.h"
 
-/*	eval.c
+/*  eval.c
  *
- *	Expression evaluation functions
+ *  Expression evaluation functions
  *
- *	written 1986 by Daniel Lawrence
- *	modified by Petri Kutvonen
+ *  written 1986 by Daniel Lawrence
+ *  modified by Petri Kutvonen
  */
 
 #include <assert.h>
@@ -35,7 +35,7 @@
 
 #define MAXVARS 255
 
-/*	Macro argument token types					*/
+/*  Macro argument token types          */
 
 #define TKNUL 0  /* end-of-string                */
 #define TKARG 1  /* interactive argument         */
@@ -55,7 +55,7 @@ static int gettyp (char *token);
 /* if GFREAD is set, current buffer will be set on first file (read in) */
 #define GFREAD 1
 
-static int gflags = GFREAD; /* global control flag		*/
+static int gflags = GFREAD; /* global control flag    */
 
 int
 readfirst_f (void)
@@ -91,7 +91,8 @@ static char *mkupper (char *dst, char *src);
 
 /* List of recognized environment variables. */
 
-static const char *envars[] = {
+static const char *envars[] =
+{
   "fillcol",  /* current fill column */
   "pagelen",  /* number of lines used by editor */
   "curcol",   /* current column pos of cursor */
@@ -239,13 +240,12 @@ static struct
   const char f_name[4];
   const int f_type;
 } funcs[] = {
-  { "abs", UFABS | MONAMIC },   /* absolute value of a number */
-  { "add", UFADD | DYNAMIC },   /* add two numbers together */
-  { "and", UFAND | DYNAMIC },   /* logical and */
-  { "asc", UFASCII | MONAMIC }, /* char to integer conversion */
-  { "ban", UFBAND | DYNAMIC },  /* bitwise and   9-10-87  jwm */
-  { "bin",
-    UFBIND | MONAMIC }, /* loopup what function name is bound to a key */
+  { "abs", UFABS | MONAMIC },     /* absolute value of a number */
+  { "add", UFADD | DYNAMIC },     /* add two numbers together */
+  { "and", UFAND | DYNAMIC },     /* logical and */
+  { "asc", UFASCII | MONAMIC },   /* char to integer conversion */
+  { "ban", UFBAND | DYNAMIC },    /* bitwise and   9-10-87  jwm */
+  { "bin", UFBIND | MONAMIC },    /* loopup what function name is bound to a key */
   { "bno", UFBNOT | MONAMIC },    /* bitwise not */
   { "bor", UFBOR | DYNAMIC },     /* bitwise or    9-10-87  jwm */
   { "bxo", UFBXOR | DYNAMIC },    /* bitwise xor   9-10-87  jwm */
@@ -300,9 +300,9 @@ static char *i_to_a (int i);
 
 /*
  * putctext:
- *	replace the current line with the passed in text
+ *  replace the current line with the passed in text
  *
- * char *iline;			contents of new line
+ * char *iline;     contents of new line
  */
 static int
 putctext (char *iline)
@@ -705,7 +705,7 @@ gtfun (char *fname)
 /*
  * look up a user var's value
  *
- * char *vname;			name of user variable to fetch
+ * char *vname;     name of user variable to fetch
  */
 static char *
 gtusr (char *vname)
@@ -729,7 +729,7 @@ gtusr (char *vname)
 /*
  * gtenv()
  *
- * char *vname;			name of environment variable to retrieve
+ * char *vname;     name of environment variable to retrieve
  */
 static char *
 gtenv (char *vname)
@@ -873,8 +873,8 @@ gtenv (char *vname)
 /*
  * set a variable
  *
- * int f;		default flag
- * int n;		numeric arg (can overide prompted value)
+ * int f;   default flag
+ * int n;   numeric arg (can overide prompted value)
  */
 int
 setvar (int f, int n)
@@ -1217,10 +1217,10 @@ svar (struct variable_description *var, char *value)
 
 /*
  * i_to_a:
- *	integer to ascii string.......... This is too
- *	inconsistant to use the system's
+ *  integer to ascii string.......... This is too
+ *  inconsistant to use the system's
  *
- * int i;		integer to translate to a string
+ * int i;   integer to translate to a string
  */
 static char *
 i_to_a (int i)
@@ -1255,7 +1255,7 @@ i_to_a (int i)
 /*
  * find the type of a passed token
  *
- * char *token;		token to analyze
+ * char *token;   token to analyze
  */
 static int
 gettyp (char *token)
@@ -1305,7 +1305,7 @@ is_it_cmd (char *token)
 /*
  * find the value of a token
  *
- * char *token;		token to evaluate
+ * char *token;   token to evaluate
  */
 char *
 getval (char *token)
@@ -1396,7 +1396,7 @@ getval (char *token)
 /*
  * convert a string to a numeric logical
  *
- * char *val;		value to check for stol
+ * char *val;   value to check for stol
  */
 int
 stol (char *val)
@@ -1414,7 +1414,7 @@ stol (char *val)
 /*
  * numeric logical to string logical
  *
- * int val;		value to translate
+ * int val;   value to translate
  */
 static char *
 ltos (int val)
@@ -1427,8 +1427,8 @@ ltos (int val)
 /*
  * make a string upper case
  *
- * char *src ;		string to upper case
- * char *dst ;		where to store
+ * char *src ;    string to upper case
+ * char *dst ;    where to store
  * dst must be at least as long as src.
  */
 static char *
@@ -1452,7 +1452,7 @@ mkupper (char *dst, char *src)
 /*
  * make a string lower case
  *
- * char *str;		string to lower case
+ * char *str;   string to lower case
  */
 char *
 mklower (char *str)
@@ -1471,10 +1471,10 @@ mklower (char *str)
 
 /*
  * returns a random integer
- *	ernd( 0)			[ 0 .. 2147483647]
- *	ernd( -2147483648)	[ 0 .. 2147483647]
- *	ernd( 1) 			[ 1]
- *  ernd( i)			[ 1 .. abs( i)]
+ *  ernd( 0)      [ 0 .. 2147483647]
+ *  ernd( -2147483648)  [ 0 .. 2147483647]
+ *  ernd( 1)      [ 1]
+ *  ernd( i)      [ 1 .. abs( i)]
  */
 static int
 ernd (int i)
@@ -1491,8 +1491,8 @@ ernd (int i)
 /*
  * find pattern within source
  *
- * char *source;	source string to search
- * char *pattern;	string to look for
+ * char *source;  source string to search
+ * char *pattern; string to look for
  */
 static int
 sindex (char *source, char *pattern)
@@ -1530,9 +1530,9 @@ sindex (char *source, char *pattern)
 /*
  * Filter a string through a translation table
  *
- * char *source;	string to filter
- * char *lookup;	characters to translate
- * char *trans;		resulting translated characters
+ * char *source;  string to filter
+ * char *lookup;  characters to translate
+ * char *trans;   resulting translated characters
  */
 static char *
 xlat (char *source, char *lookup, char *trans)
@@ -1576,7 +1576,7 @@ xlat (char *source, char *lookup, char *trans)
  * current $discmd setting. This is needed when $debug is TRUE
  * and for the write-message and clear-message-line commands
  *
- * char *s;		string to force out
+ * char *s;   string to force out
  */
 static void
 mlforce (char *s)
@@ -1593,7 +1593,7 @@ mlforce (char *s)
  * This function simply clears the message line,
  * mainly for macro usage
  *
- * int f, n;		arguments ignored
+ * int f, n;    arguments ignored
  */
 int
 clrmes (int f, int n)
@@ -1606,7 +1606,7 @@ clrmes (int f, int n)
  * This function writes a string on the message line
  * mainly for macro usage
  *
- * int f, n;		arguments ignored
+ * int f, n;    arguments ignored
  */
 int
 writemsg (int f, int n)
