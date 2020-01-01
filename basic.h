@@ -3,15 +3,13 @@
 #ifndef _BASIC_H_
 #define _BASIC_H_
 
-#include "retcode.h"
-
 /*
 ** $overlap is the size of the line overlap when kbd calls page forw/back
 ** if 0, page will move by 2/3 of the window size (1/3 page overlap)
 ** default to 0
 */
 #define DEFAULT_OVERLAP 0
-extern int overlap; /* line overlap in forw/back page	*/
+extern int overlap; /* line overlap in forw/back page */
 
 /* $target (== curgoal) is the column target when doing line move */
 extern int curgoal; /* Goal for C-P previous-line, C-N next-line */

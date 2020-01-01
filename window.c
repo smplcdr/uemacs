@@ -2,7 +2,7 @@
 
 #include "window.h"
 
-/*	window.c
+/*  window.c
  *
  *      Window management. Some of the functions are internal, and some are
  *      attached to keys that the user actually types.
@@ -67,7 +67,7 @@ redraw (int f, int n)
  *
  * with an argument this command finds the <n>th window from the top
  *
- * int f, n;		default flag and numeric argument
+ * int f, n;    default flag and numeric argument
  *
  */
 int
@@ -266,7 +266,7 @@ onlywind (int f, int n)
  * Delete the current window, placing its space in the window above,
  * or, if it is the top window, the window below. Bound to C-X 0.
  *
- * int f, n;	arguments are ignored for this command
+ * int f, n;  arguments are ignored for this command
  */
 int
 delwind (int f, int n)
@@ -353,7 +353,7 @@ delwind (int f, int n)
  * other error that is possible is a "malloc" failure allocating the
  * structure for the new window.  Bound to "C-X 2".
  *
- * int f, n;	default flag and numeric argument
+ * int f, n;  default flag and numeric argument
  */
 int
 splitwind (int f, int n)
@@ -555,7 +555,7 @@ shrinkwind (int f, int n)
 /*
  * Resize the current window to the requested size
  *
- * int f, n;		default flag and numeric argument
+ * int f, n;    default flag and numeric argument
  */
 int
 resize (int f, int n)
@@ -646,8 +646,8 @@ restwnd (int f, int n)
 /*
  * resize the screen, re-writing the screen
  *
- * int f;	default flag
- * int n;	numeric argument
+ * int f; default flag
+ * int n; numeric argument
  */
 int
 newsize (int f, int n)
@@ -743,8 +743,8 @@ newsize (int f, int n)
 /*
  * resize the screen, re-writing the screen
  *
- * int f;		default flag
- * int n;		numeric argument
+ * int f;   default flag
+ * int n;   numeric argument
  */
 int
 newwidth (int f, int n)

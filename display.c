@@ -199,7 +199,6 @@ vtmove (int row, int col)
  * This routine only puts printing characters into the virtual
  * terminal buffers. Only column overflow is checked.
  */
-
 static void
 sane_vtputc (unicode_t c)
 {

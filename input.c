@@ -41,10 +41,10 @@ kbdstate kbdmode = STOP; /* current keyboard macro mode  */
 int lastkey = 0;         /* last keystoke                */
 int kbdrep = 0;          /* number of repetitions        */
 
-int metac = CONTROL | '[';  /* current meta character 	 */
+int metac = CONTROL | '[';  /* current meta character    */
 int ctlxc = CONTROL | 'X';  /* current control X prefix char */
 int reptc = CONTROL | 'U';  /* current universal repeat char */
-int abortc = CONTROL | 'G'; /* current abort command char	 */
+int abortc = CONTROL | 'G'; /* current abort command char  */
 
 const int nlc = CONTROL | 'J'; /* end of input char */
 
@@ -70,7 +70,7 @@ mlyesno (const char *prompt)
 {
   int c; /* input character */
 
-  for (;;)
+  while (TRUE)
     {
       /* prompt the user */
       mlwrite ("%s (y/n)? ", prompt);
@@ -93,10 +93,10 @@ mlyesno (const char *prompt)
  * newnextarg:
  *  get the next argument
  *
- * char **outbufref ;	buffer to put token into
- * const char *prompt ;	prompt to use if we must be interactive
- * int size ;			size of the buffer
- * int terminator ;		terminating char to be used on interactive
+ * char **outbufref ; buffer to put token into
+ * const char *prompt ; prompt to use if we must be interactive
+ * int size ;     size of the buffer
+ * int terminator ;   terminating char to be used on interactive
  * fetch
  */
 static int
@@ -600,8 +600,8 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
   static char tmp[] = "/tmp/meXXXXXX";
   FILE *tmpf = NULL;
 #endif
-  /*	Look for "Find file: ", "View file: ", "Insert file: ", "Write file: ",
-  **	"Read file: ", "Execute file: " */
+  /*  Look for "Find file: ", "View file: ", "Insert file: ", "Write file: ",
+  **  "Read file: ", "Execute file: " */
   file_f = NULL != strstr (prompt, " file: ");
 #endif
 

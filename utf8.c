@@ -17,18 +17,18 @@
  * NOTE 2! This does *not* verify things like minimality. So overlong forms
  * are happily accepted and decoded, as are the various "invalid values".
  */
-unsigned
-utf8_to_unicode (const char *line, unsigned index, unsigned len,
+unsigned int
+utf8_to_unicode (const char *line, unsigned int index, unsigned int len,
                  unicode_t *res)
 {
   unicode_t value;
-  unsigned c;
-  unsigned bytes, mask, i;
+  unsigned int c;
+  unsigned int bytes, mask, i;
 
   if (index >= len)
     return 0;
 
-  *res = c = line[index] & 0xFFU;
+  *res = c = line[index] & 0xFF;
 
   /*
    * 0xxxxxxx is valid one byte utf8
@@ -87,7 +87,7 @@ utf8_to_unicode (const char *line, unsigned index, unsigned len,
 unsigned
 unicode_to_utf8 (unicode_t c, char *utf8)
 {
-  unsigned bytes = 1;
+  unsigned int bytes = 1;
 
   assert (c <= 0x10FFFF);
 

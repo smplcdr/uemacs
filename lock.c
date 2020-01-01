@@ -1,13 +1,13 @@
 /* lock.c -- implements lock.h */
 
-#include "lock.h"
 #include "estruct.h"
+#include "lock.h"
 
-/*	LOCK.C
+/*  LOCK.C
  *
- *	File locking command routines
+ *  File locking command routines
  *
- *	written by Daniel Lawrence
+ *  written by Daniel Lawrence
  */
 
 #if BSD | SVR4
@@ -26,17 +26,17 @@
 
 #include <sys/errno.h>
 
-#define NLOCKS 100          /* max # of file locks active	*/
-static char *lname[NLOCKS]; /* names of all locked files	*/
-static int numlocks;        /* # of current locks active	*/
+#define NLOCKS 100          /* max # of file locks active */
+static char *lname[NLOCKS]; /* names of all locked files  */
+static int numlocks;        /* # of current locks active  */
 
 static void lckerror (char *errstr);
 
 /*
  * lockchk:
- *	check a file for locking and add it to the list
+ *  check a file for locking and add it to the list
  *
- * const char *fname;			file to check for a lock
+ * const char *fname;     file to check for a lock
  */
 int
 lockchk (const char *fname)
@@ -65,7 +65,7 @@ lockchk (const char *fname)
     return TRUE;
 
   /* we have now locked it, add it to our table */
-  lname[++numlocks - 1] = (char *)malloc (strlen (fname) + 1);
+  lname[++numlocks - 1] = (char *) malloc (strlen (fname) + 1);
   if (lname[numlocks - 1] == NULL)
     {                   /* malloc failure */
       undolock (fname); /* free the lock */
@@ -81,7 +81,7 @@ lockchk (const char *fname)
 
 /*
  * lockrel:
- *	release all the file locks so others may edit
+ *  release all the file locks so others may edit
  */
 int
 lockrel (void)
@@ -104,12 +104,12 @@ lockrel (void)
 
 /*
  * lock:
- *	Check and lock a file from access by others
- *	returns	TRUE = files was not locked and now is
- *		FALSE = file was locked and overridden
- *		ABORT = file was locked, abort command
+ *  Check and lock a file from access by others
+ *  returns TRUE = files was not locked and now is
+ *    FALSE = file was locked and overridden
+ *    ABORT = file was locked, abort command
  *
- * const char *fname;		file name to lock
+ * const char *fname;   file name to lock
  */
 int
 lock (const char *fname)
@@ -143,10 +143,10 @@ lock (const char *fname)
 
 /*
  * unlock:
- *	Unlock a file
- *	this only warns the user if it fails
+ *  Unlock a file
+ *  this only warns the user if it fails
  *
- * const char *fname;		file to unlock
+ * const char *fname;   file to unlock
  */
 int
 unlock (const char *fname)
@@ -166,7 +166,7 @@ unlock (const char *fname)
 /*
  * report a lock error
  *
- * char *errstr;	lock error string to print out
+ * char *errstr;  lock error string to print out
  */
 void
 lckerror (char *errstr)
@@ -180,7 +180,7 @@ lckerror (char *errstr)
 }
 
 #else
-typedef void _pedantic_empty_translation_unit;
+typedef int dummy;
 #endif
 
 /* end of lock.c */

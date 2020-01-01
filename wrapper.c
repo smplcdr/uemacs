@@ -18,7 +18,9 @@ mkstemp (char *template)
 static void
 die (const char *err)
 {
-  fprintf (stderr, "fatal: %s\n", err);
+  fputs ("fatal: ", stderr);
+  fputs (err, stderr);
+  fputs ("\n", stderr);
   exit (EXIT_FAILURE);
 }
 

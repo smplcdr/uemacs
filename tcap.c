@@ -1,11 +1,11 @@
 /* tcap.c -- implements terminal.h */
 #include "terminal.h"
 
-/*	tcap.c
+/*  tcap.c
  *
- *	Unix V7 SysV and BS4 Termcap video driver
+ *  Unix V7 SysV and BS4 Termcap video driver
  *
- *	modified by Petri Kutvonen
+ *  modified by Petri Kutvonen
  */
 
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 /*
  * Defining this to 1 breaks tcapopen() - it doesn't check if the
  * sceen size has changed.
- *	-lbt
+ *  -lbt
  */
 #define USE_BROKEN_OPTIMIZATION 0
 #define termdef 1 /* Don't define "term" external. */
@@ -35,7 +35,7 @@ int revexist = FALSE; /* does reverse video exist?    */
 int sgarbf = TRUE;    /* TRUE if screen is garbage    */
 
 char sres[16]; /* current screen resolution    */
-               /* NORMAL, CGA, EGA, VGA	*/
+               /* NORMAL, CGA, EGA, VGA */
 
 #if UNIX
 #include <signal.h>
@@ -218,13 +218,9 @@ tcapopen (void)
           term.t_scroll = tcapscroll_reg;
         }
       else if (DL && AL)
-        {
-          term.t_scroll = tcapscroll_delins;
-        }
+        term.t_scroll = tcapscroll_delins;
       else
-        {
-          term.t_scroll = NULL;
-        }
+        term.t_scroll = NULL;
 #endif
 
       if (p >= &tcapbuf[TCAPSLEN])
@@ -382,11 +378,13 @@ tcapscrollregion (int top, int bot)
 static void
 tcapfcol (void)
 {
+  return;
 }
 /* No colors here, ignore this. */
 static void
 tcapbcol (void)
 {
+  return;
 }
 #endif
 
@@ -399,6 +397,6 @@ tcapbeep (void)
 static void
 putpad (char *str)
 {
-  tputs (str, 1, (int (*) (int))ttputc);
+  tputs (str, 1, (int (*) (int)) ttputc);
 }
 #endif /* TERMCAP */

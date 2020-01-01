@@ -1,6 +1,7 @@
 /* pklock.c -- implements pklock.h */
-#include "pklock.h"
+
 #include "estruct.h"
+#include "pklock.h"
 
 /*	PKLOCK.C
  *

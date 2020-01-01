@@ -14,7 +14,7 @@ typedef char bname_t[16];  /* buffer name type */
  * the buffer is not being displayed (that is, if "b_nwnd" is 0). The text for
  * the buffer is kept in a circularly linked list of lines, with a pointer to
  * the header line in "b_linep".
- * 	Buffers may be "Inactive" which means the files associated with them
+ *  Buffers may be "Inactive" which means the files associated with them
  * have not been read in yet. These get read in at "use buffer" time.
  */
 struct buffer
@@ -37,22 +37,22 @@ extern struct buffer *curbp;  /* Current buffer               */
 extern struct buffer *bheadp; /* Head of list of buffers      */
 extern struct buffer *blistp; /* Buffer for C-X C-B           */
 
-#define BFINVS 0x01  /* Internal invisable buffer    */
-#define BFCHG 0x02   /* Changed since last write     */
+#define BFINVS  0x01 /* Internal invisable buffer    */
+#define BFCHG   0x02 /* Changed since last write     */
 #define BFTRUNC 0x04 /* buffer was truncated when read */
 
-/*	mode flags	*/
+/*  mode flags  */
 #define NUMMODES 9 /* # of defined modes           */
 
-#define MDWRAP 0x0001  /* word wrap                    */
-#define MDCMOD 0x0002  /* C indentation and fence match */
+#define MDWRAP  0x0001 /* word wrap                    */
+#define MDCMOD  0x0002 /* C indentation and fence match */
 #define MDEXACT 0x0004 /* Exact matching for searches  */
-#define MDVIEW 0x0008  /* read-only buffer             */
-#define MDOVER 0x0010  /* overwrite mode               */
+#define MDVIEW  0x0008 /* read-only buffer             */
+#define MDOVER  0x0010 /* overwrite mode               */
 #define MDMAGIC 0x0020 /* regular expresions in search */
 #define MDASAVE 0x0040 /* auto-save mode               */
-#define MDUTF8 0x0080  /* utf8 mode                    */
-#define MDDOS 0x0100   /* CRLF eol mode                */
+#define MDUTF8  0x0080 /* utf8 mode                    */
+#define MDDOS   0x0100 /* CRLF eol mode                */
 
 extern const char *modename[]; /* text names of modes          */
 extern int gmode;              /* global editor mode           */

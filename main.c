@@ -1,33 +1,33 @@
 /* main.c -- */
 
 /*
- *	main.c
+ *  main.c
  *
- *	µEMACS 4.2
+ *  µEMACS 4.2
  *
- *	Based on:
+ *  Based on:
  *
- *	uEmacs/PK 4.0
+ *  uEmacs/PK 4.0
  *
- *	Based on:
+ *  Based on:
  *
- *	MicroEMACS 3.9
- *	Written by Dave G. Conroy.
- *	Substantially modified by Daniel M. Lawrence
- *	Modified by Petri Kutvonen
+ *  MicroEMACS 3.9
+ *  Written by Dave G. Conroy.
+ *  Substantially modified by Daniel M. Lawrence
+ *  Modified by Petri Kutvonen
  *
- *	MicroEMACS 3.9 (c) Copyright 1987 by Daniel M. Lawrence
+ *  MicroEMACS 3.9 (c) Copyright 1987 by Daniel M. Lawrence
  *
- *	Original statement of copying policy:
+ *  Original statement of copying policy:
  *
- *	MicroEMACS 3.9 can be copied and distributed freely for any
- *	non-commercial purposes. MicroEMACS 3.9 can only be incorporated
- *	into commercial software with the permission of the current author.
+ *  MicroEMACS 3.9 can be copied and distributed freely for any
+ *  non-commercial purposes. MicroEMACS 3.9 can only be incorporated
+ *  into commercial software with the permission of the current author.
  *
- *	No copyright claimed for modifications made by Petri Kutvonen.
+ *  No copyright claimed for modifications made by Petri Kutvonen.
  *
- *	This file contains the main driving routine, and some keyboard
- *	processing code.
+ *  This file contains the main driving routine, and some keyboard
+ *  processing code.
  *
  * REVISION HISTORY:
  *
@@ -39,13 +39,13 @@
  *
  * 3.2-3.6 Daniel Lawrence, Feb...Apr-86
  *
- * 3.7	Daniel Lawrence, 14-May-86
+ * 3.7  Daniel Lawrence, 14-May-86
  *
- * 3.8	Daniel Lawrence, 18-Jan-87
+ * 3.8  Daniel Lawrence, 18-Jan-87
  *
- * 3.9	Daniel Lawrence, 16-Jul-87
+ * 3.9  Daniel Lawrence, 16-Jul-87
  *
- * 3.9e	Daniel Lawrence, 16-Nov-87
+ * 3.9e Daniel Lawrence, 16-Nov-87
  *
  * After that versions 3.X and Daniel Lawrence went their own ways.
  * A modified 3.9e/PK was heavily used at the University of Helsinki
@@ -53,15 +53,15 @@
  *
  * This modified version is now called eEmacs/PK.
  *
- * 4.0	Petri Kutvonen, 1-Sep-91
+ * 4.0  Petri Kutvonen, 1-Sep-91
  *
  * This modified version is now called uEMACS.
  *
- * 4.1	Renaud Fivet, 1-May-13
+ * 4.1  Renaud Fivet, 1-May-13
  *
  * Renamed as µEMACS to emphasize UTF-8 support.
  *
- * 4.2	Renaud Fivet, 2015-02-12
+ * 4.2  Renaud Fivet, 2015-02-12
  *
  */
 
@@ -117,13 +117,13 @@ usage (void)
   puts ("      +<n>          start at line <n>");
   puts ("      --help        display this help and exit");
   puts ("      --version     output version information and exit");
-  puts ("      -a|A          process error file");
-  puts ("      -e|E          edit file");
-  puts ("      -g|G<n>       go to line <n>");
-  puts ("      -r|R          restrictive use");
-  puts ("      -s|S<string>  search string");
-  puts ("      -v|V          view file");
-  puts ("      -x|X cmdfile  execute command file\n");
+  puts ("      -a            process error file");
+  puts ("      -e            edit file");
+  puts ("      -g<n>         go to line <n>");
+  puts ("      -r            restrictive use");
+  puts ("      -s <string>   search string");
+  puts ("      -v            view file");
+  puts ("      -x <cmdfile>  execute command file\n");
   puts ("      @cmdfile      execute startup file\n");
 }
 
@@ -194,104 +194,90 @@ main (int argc, char **argv)
         }
       else
 #endif
-          if (argv[carg][0] == '-')
-        {
-          switch (argv[carg][1])
-            {
-              /* Process Startup macroes */
-            case 'a': /* process error file */
-            case 'A':
-              errflag = TRUE;
-              break;
-            case 'e': /* -e for Edit file */
-            case 'E':
-              viewflag = FALSE;
-              break;
-            case 'g': /* -g for initial goto */
-            case 'G':
-              gotoflag = TRUE;
-              gline = atoi (&argv[carg][2]);
-              break;
-            case 'r': /* -r restrictive use */
-            case 'R':
-              restflag = TRUE;
-              break;
-            case 's': /* -s for initial search string */
-            case 'S':
-              searchflag = TRUE;
-              strlcpy (pat, &argv[carg][2], sizeof pat);
-              break;
-            case 'v': /* -v for View File */
-            case 'V':
-              viewflag = TRUE;
-              break;
-            case 'x':
-            case 'X':
-              if (argv[carg][2])
-                { /* -Xfilename */
-                  if (startup (&argv[carg][2]) == TRUE)
-                    startflag = TRUE; /* don't execute emacs.rc */
-                }
-              else if (argv[carg + 1])
-                { /* -X filename */
-                  if (startup (&argv[carg + 1][0]) == TRUE)
-                    startflag = TRUE; /* don't execute emacs.rc */
+        if (argv[carg][0] == '-')
+          {
+            switch (argv[carg][1])
+              {
+                /* Process Startup macroes */
+              case 'a': /* process error file */
+                errflag = TRUE;
+                break;
+              case 'e': /* -e for Edit file */
+                viewflag = FALSE;
+                break;
+              case 'g': /* -g for initial goto */
+                gotoflag = TRUE;
+                gline = atoi (&argv[carg][2]);
+                break;
+              case 'r': /* -r restrictive use */
+                restflag = TRUE;
+                break;
+              case 's': /* -s for initial search string */
+                searchflag = TRUE;
+                strlcpy (pat, &argv[carg][2], sizeof (pat));
+                break;
+              case 'v': /* -v for View File */
+                viewflag = TRUE;
+                break;
+              case 'x':
+                if (argv[carg][2] != '\0')
+                  {
+                    /* -xfilename */
+                    if (startup (&argv[carg][2]) == TRUE)
+                      startflag = TRUE; /* don't execute emacs.rc */
+                  }
+                else if (argv[carg + 1] != NULL)
+                  {
+                    /* -x filename */
+                    if (startup (&argv[carg + 1][0]) == TRUE)
+                      startflag = TRUE; /* don't execute emacs.rc */
+                    carg += 1;
+                  }
+                break;
+              default: /* unknown switch */
+                /* ignore this for now */
+                break;
+              }
+          }
+        else if (argv[carg][0] == '@')
+          {
+            /* Process Startup macroes */
+            if (startup (&argv[carg][1]) == TRUE)
+              /* don't execute emacs.rc */
+              startflag = TRUE;
+          }
+        else
+          {
+            /* Process an input file */
+            /* set up a buffer for this file */
+            makename (bname, argv[carg]);
+            unqname (bname);
+            /* set this to inactive */
+            bp = bfind (bname, TRUE, 0);
+            if (bp == NULL)
+              {
+                fputs ("Buffer creation failed!\n", stderr);
+                exit (EXIT_FAILURE);
+              }
 
-                  carg += 1;
-                }
+            strlcpy (bp->b_fname, argv[carg], sizeof (bp->b_fname)); /* max filename length limited to NFILEN - 1 */
+            bp->b_active = FALSE;
+            if (firstfile)
+              {
+                firstbp = bp;
+                firstfile = FALSE;
+              }
 
-              break;
-            default: /* unknown switch */
-              /* ignore this for now */
-              break;
-            }
-        }
-      else if (argv[carg][0] == '@')
-        {
-
-          /* Process Startup macroes */
-          if (startup (&argv[carg][1]) == TRUE)
-            /* don't execute emacs.rc */
-            startflag = TRUE;
-        }
-      else
-        {
-
-          /* Process an input file */
-
-          /* set up a buffer for this file */
-          makename (bname, argv[carg]);
-          unqname (bname);
-
-          /* set this to inactive */
-          bp = bfind (bname, TRUE, 0);
-          if (bp == NULL)
-            {
-              fputs ("Buffer creation failed!\n", stderr);
-              exit (EXIT_FAILURE);
-            }
-
-          strlcpy (
-              bp->b_fname, argv[carg],
-              sizeof bp
-                  ->b_fname); /* max filename length limited to NFILEN - 1 */
-          bp->b_active = FALSE;
-          if (firstfile)
-            {
-              firstbp = bp;
-              firstfile = FALSE;
-            }
-
-          /* set the modes appropriatly */
-          if (viewflag)
-            bp->b_mode |= MDVIEW;
-        }
+            /* set the modes appropriatly */
+            if (viewflag)
+              bp->b_mode |= MDVIEW;
+          }
     }
 
 #if UNIX
-#ifdef SIGHUP
+# ifdef SIGHUP
   signal (SIGHUP, emergencyexit);
-#endif
+# endif
   signal (SIGTERM, emergencyexit);
 #endif
 
@@ -357,10 +343,8 @@ edinit (char *bname)
   struct window *wp;
 
   if (NULL == (bp = bfind (bname, TRUE, 0)) /* First buffer         */
-      || NULL
-             == (blistp
-                 = bfind ("*List*", TRUE, BFINVS)) /* Buffer list buffer   */
-      || NULL == (wp = (struct window *)malloc (sizeof (struct window))))
+      || NULL == (blistp = bfind ("*List*", TRUE, BFINVS)) /* Buffer list buffer   */
+      || NULL == (wp = malloc (sizeof (*wp))))
     { /* First window         */
       fputs ("First initialisation failed!\n", stderr);
       exit (EXIT_FAILURE);
@@ -388,10 +372,10 @@ edinit (char *bname)
   wp->w_flag = WFMODE | WFHARD; /* Full.                */
 }
 
-/*****		Compiler specific Library functions	****/
+/*****    Compiler specific Library functions ****/
 
 #if RAMSIZE
-/*	These routines will allow me to track memory usage by placing
+/*  These routines will allow me to track memory usage by placing
         a layer on top of the standard system malloc() and free() calls.
         with this code defined, the environment variable, $RAM, will
         report on the number of bytes allocated via malloc.
@@ -404,19 +388,14 @@ static void dspram (void);
 
 #undef malloc
 #undef free
-#if 0
-char *allocate(nbytes)
-			    /* allocate nbytes and track */
-unsigned nbytes;		/* # of bytes to allocate */
-#endif
 void *
 allocate (size_t nbytes)
 {
   char *mp; /* ptr returned from malloc */
-            /*	char *malloc(); */
+            /*  char *malloc(); */
 
   mp = malloc (nbytes);
-  if (mp)
+  if (mp != NULL)
     {
       envram += nbytes;
 #if RAMSHOW
@@ -427,21 +406,16 @@ allocate (size_t nbytes)
   return mp;
 }
 
-#if 0
-release(mp)
-    /* release malloced memory and track */
-char *mp;			/* chunk of RAM to release */
-#endif
 void
 release (void *mp)
 {
   unsigned *lp; /* ptr to the long containing the block size */
 
-  if (mp)
+  if (mp != NULL)
     {
       /* update amount of ram currently malloced */
-      lp = ((unsigned *)mp) - 1;
-      envram -= (long)*lp - 2;
+      lp = ((unsigned *) mp) - 1;
+      envram -= (long) *lp - 2;
       free (mp);
 #if RAMSHOW
       dspram ();
@@ -471,17 +445,16 @@ dspram (void)
 #endif
 #endif
 
-/*	On some primitave operation systems, and when emacs is used as
+/*  On some primitave operation systems, and when emacs is used as
         a subprogram to a larger project, emacs needs to de-alloc its
         own used memory
 */
 
 #if CLEAN
-
 /*
  * cexit()
  *
- * int status;		return status of emacs
+ * int status;    return status of emacs
  */
 void
 cexit (int status)
@@ -492,7 +465,7 @@ cexit (int status)
 
   /* first clean up the windows */
   wp = wheadp;
-  while (wp)
+  while (wp != NULL)
     {
       tp = wp->w_wndp;
       free (wp);

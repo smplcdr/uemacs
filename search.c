@@ -1,7 +1,7 @@
 /* search.c -- implements search.h */
 #include "search.h"
 
-/*	search.c
+/*  search.c
  *
  * The functions in this file implement commands that search in the forward
  * and backward directions.  There are no special characters in the search
@@ -9,55 +9,55 @@
  * like that.
  *
  * Aug. 1986 John M. Gamble:
- *	Made forward and reverse search use the same scan routine.
+ *  Made forward and reverse search use the same scan routine.
  *
- *	Added a limited number of regular expressions - 'any',
- *	'character class', 'closure', 'beginning of line', and
- *	'end of line'.
+ *  Added a limited number of regular expressions - 'any',
+ *  'character class', 'closure', 'beginning of line', and
+ *  'end of line'.
  *
- *	Replacement metacharacters will have to wait for a re-write of
- *	the replaces function, and a new variation of ldelete().
+ *  Replacement metacharacters will have to wait for a re-write of
+ *  the replaces function, and a new variation of ldelete().
  *
- *	For those curious as to my references, i made use of
- *	Kernighan & Plauger's "Software Tools."
- *	I deliberately did not look at any published grep or editor
- *	source (aside from this one) for inspiration.  I did make use of
- *	Allen Hollub's bitmap routines as published in Doctor Dobb's Journal,
- *	June, 1985 and modified them for the limited needs of character class
- *	matching.  Any inefficiences, bugs, stupid coding examples, etc.,
- *	are therefore my own responsibility.
+ *  For those curious as to my references, i made use of
+ *  Kernighan & Plauger's "Software Tools."
+ *  I deliberately did not look at any published grep or editor
+ *  source (aside from this one) for inspiration.  I did make use of
+ *  Allen Hollub's bitmap routines as published in Doctor Dobb's Journal,
+ *  June, 1985 and modified them for the limited needs of character class
+ *  matching.  Any inefficiences, bugs, stupid coding examples, etc.,
+ *  are therefore my own responsibility.
  *
  * April 1987: John M. Gamble
- *	Deleted the "if (n == 0) n = 1;" statements in front of the
- *	search/hunt routines.  Since we now use a do loop, these
- *	checks are unnecessary.  Consolidated common code into the
- *	function delins().  Renamed global mclen matchlen,
- *	and added the globals matchline, matchoff, patmatch, and
- *	mlenold.
- *	This gave us the ability to unreplace regular expression searches,
- *	and to put the matched string into an evironment variable.
- *	SOON TO COME: Meta-replacement characters!
+ *  Deleted the "if (n == 0) n = 1;" statements in front of the
+ *  search/hunt routines.  Since we now use a do loop, these
+ *  checks are unnecessary.  Consolidated common code into the
+ *  function delins().  Renamed global mclen matchlen,
+ *  and added the globals matchline, matchoff, patmatch, and
+ *  mlenold.
+ *  This gave us the ability to unreplace regular expression searches,
+ *  and to put the matched string into an evironment variable.
+ *  SOON TO COME: Meta-replacement characters!
  *
- *	25-apr-87	DML
- *	- cleaned up an unneccessary if/else in forwsearch() and
- *	  backsearch()
- *	- savematch() failed to malloc room for the terminating byte
- *	  of the match string (stomp...stomp...). It does now. Also
- *	  it now returns gracefully if malloc fails
+ *  25-apr-87 DML
+ *  - cleaned up an unneccessary if/else in forwsearch() and
+ *    backsearch()
+ *  - savematch() failed to malloc room for the terminating byte
+ *    of the match string (stomp...stomp...). It does now. Also
+ *    it now returns gracefully if malloc fails
  *
- *	July 1987: John M. Gamble
- *	Set the variables matchlen and matchoff in the 'unreplace'
- *	section of replaces().  The function savematch() would
- *	get confused if you replaced, unreplaced, then replaced
- *	again (serves you right for being so wishy-washy...)
+ *  July 1987: John M. Gamble
+ *  Set the variables matchlen and matchoff in the 'unreplace'
+ *  section of replaces().  The function savematch() would
+ *  get confused if you replaced, unreplaced, then replaced
+ *  again (serves you right for being so wishy-washy...)
  *
- *	August 1987: John M. Gamble
- *	Put in new function rmcstr() to create the replacement
- *	meta-character array.  Modified delins() so that it knows
- *	whether or not to make use of the array.  And, put in the
- *	appropriate new structures and variables.
+ *  August 1987: John M. Gamble
+ *  Put in new function rmcstr() to create the replacement
+ *  meta-character array.  Modified delins() so that it knows
+ *  whether or not to make use of the array.  And, put in the
+ *  appropriate new structures and variables.
  *
- *	Modified by Petri Kutvonen
+ *  Modified by Petri Kutvonen
  */
 
 #include <stdio.h>
@@ -182,10 +182,10 @@ static void setbit (int bc, char *cclmap);
 
 /*
  * forwsearch -- Search forward.  Get a search string from the user, and
- *	search for the string.  If found, reset the "." to be just after
- *	the match string, and (perhaps) repaint the display.
+ *  search for the string.  If found, reset the "." to be just after
+ *  the match string, and (perhaps) repaint the display.
  *
- * int f, n;			default flag / numeric argument
+ * int f, n;      default flag / numeric argument
  */
 int
 forwsearch (int f, int n)
@@ -230,10 +230,10 @@ forwsearch (int f, int n)
 
 /*
  * forwhunt -- Search forward for a previously acquired search string.
- *	If found, reset the "." to be just after the match string,
- *	and (perhaps) repaint the display.
+ *  If found, reset the "." to be just after the match string,
+ *  and (perhaps) repaint the display.
  *
- * int f, n;		default flag / numeric argument
+ * int f, n;    default flag / numeric argument
  */
 int
 forwhunt (int f, int n)
@@ -287,11 +287,11 @@ forwhunt (int f, int n)
 
 /*
  * backsearch -- Reverse search.  Get a search string from the user, and
- *	search, starting at "." and proceeding toward the front of the buffer.
- *	If found "." is left pointing at the first character of the pattern
- *	(the last character that was matched).
+ *  search, starting at "." and proceeding toward the front of the buffer.
+ *  If found "." is left pointing at the first character of the pattern
+ *  (the last character that was matched).
  *
- * int f, n;		default flag / numeric argument
+ * int f, n;    default flag / numeric argument
  */
 int
 backsearch (int f, int n)
@@ -336,11 +336,11 @@ backsearch (int f, int n)
 
 /*
  * backhunt -- Reverse search for a previously acquired search string,
- *	starting at "." and proceeding toward the front of the buffer.
- *	If found "." is left pointing at the first character of the pattern
- *	(the last character that was matched).
+ *  starting at "." and proceeding toward the front of the buffer.
+ *  If found "." is left pointing at the first character of the pattern
+ *  (the last character that was matched).
  *
- * int f, n;		default flag / numeric argument
+ * int f, n;    default flag / numeric argument
  */
 int
 backhunt (int f, int n)
@@ -395,12 +395,12 @@ backhunt (int f, int n)
 #if MAGIC
 /*
  * mcscanner -- Search for a meta-pattern in either direction.  If found,
- *	reset the "." to be at the start or just after the match string,
- *	and (perhaps) repaint the display.
+ *  reset the "." to be at the start or just after the match string,
+ *  and (perhaps) repaint the display.
  *
- * struct magic *mcpatrn;			pointer into pattern
- * int direct;			which way to go.
- * int beg_or_end;		put point at beginning or end of pattern.
+ * struct magic *mcpatrn;     pointer into pattern
+ * int direct;      which way to go.
+ * int beg_or_end;    put point at beginning or end of pattern.
  */
 static int
 mcscanner (struct magic *mcpatrn, int direct, int beg_or_end)
@@ -469,13 +469,13 @@ mcscanner (struct magic *mcpatrn, int direct, int beg_or_end)
 
 /*
  * amatch -- Search for a meta-pattern in either direction.  Based on the
- *	recursive routine amatch() (for "anchored match") in
- *	Kernighan & Plauger's "Software Tools".
+ *  recursive routine amatch() (for "anchored match") in
+ *  Kernighan & Plauger's "Software Tools".
  *
- * struct magic *mcptr;		string to scan for
- * int direct;		which way to go.
- * struct line **pcwline;	current line during scan
- * int *pcwoff;		position within current line
+ * struct magic *mcptr;   string to scan for
+ * int direct;    which way to go.
+ * struct line **pcwline; current line during scan
+ * int *pcwoff;   position within current line
  */
 static int
 amatch (struct magic *mcptr, int direct, struct line **pcwline, int *pcwoff)
@@ -622,12 +622,12 @@ success:
 
 /*
  * scanner -- Search for a pattern in either direction.  If found,
- *	reset the "." to be at the start or just after the match string,
- *	and (perhaps) repaint the display.
+ *  reset the "." to be at the start or just after the match string,
+ *  and (perhaps) repaint the display.
  *
- * unsigned char *patrn;	string to scan for
- * int direct;			which way to go.
- * int beg_or_end;		put point at beginning or end of pattern.
+ * unsigned char *patrn;  string to scan for
+ * int direct;      which way to go.
+ * int beg_or_end;    put point at beginning or end of pattern.
  */
 int
 scanner (const char *patrn, int direct, int beg_or_end)
@@ -708,7 +708,7 @@ scanner (const char *patrn, int direct, int beg_or_end)
 
 /*
  * eq -- Compare two characters.  The "bc" comes from the buffer, "pc"
- *	from the pattern.  If we are not in EXACT mode, fold out the case.
+ *  from the pattern.  If we are not in EXACT mode, fold out the case.
  */
 int
 eq (unsigned char bc, unsigned char pc)
@@ -736,14 +736,14 @@ setprompt (char *tpat, unsigned tpat_size, char *prompt, char *apat)
 
 /*
  * readpattern -- Read a pattern.  Stash it in apat.  If it is the
- *	search string, create the reverse pattern and the magic
- *	pattern, assuming we are in MAGIC mode (and defined that way).
- *	Apat is not updated if the user types in an empty line.  If
- *	the user typed an empty line, and there is no old pattern, it is
- *	an error.  Display the old pattern, in the style of Jeff Lomicka.
- *	There is some do-it-yourself control expansion.  Change to using
- *	<META> to delimit the end-of-pattern to allow <NL>s in the search
- *	string.
+ *  search string, create the reverse pattern and the magic
+ *  pattern, assuming we are in MAGIC mode (and defined that way).
+ *  Apat is not updated if the user types in an empty line.  If
+ *  the user typed an empty line, and there is no old pattern, it is
+ *  an error.  Display the old pattern, in the style of Jeff Lomicka.
+ *  There is some do-it-yourself control expansion.  Change to using
+ *  <META> to delimit the end-of-pattern to allow <NL>s in the search
+ *  string.
  */
 static int
 readpattern (char *prompt, char *apat, int srch)
@@ -843,8 +843,8 @@ rvstrcpy (char *rvstr, char *str)
 /*
  * sreplace -- Search and replace.
  *
- * int f;		default flag
- * int n;		# of repetitions wanted
+ * int f;   default flag
+ * int n;   # of repetitions wanted
  */
 int
 sreplace (int f, int n)
@@ -855,8 +855,8 @@ sreplace (int f, int n)
 /*
  * qreplace -- search and replace with query.
  *
- * int f;		default flag
- * int n;		# of repetitions wanted
+ * int f;   default flag
+ * int n;   # of repetitions wanted
  */
 int
 qreplace (int f, int n)
@@ -866,11 +866,11 @@ qreplace (int f, int n)
 
 /*
  * replaces -- Search for a string and replace it with another
- *	string.  Query might be enabled (according to kind).
+ *  string.  Query might be enabled (according to kind).
  *
- * int kind;		Query enabled flag
- * int f;		default flag
- * int n;		# of repetitions wanted
+ * int kind;    Query enabled flag
+ * int f;   default flag
+ * int n;   # of repetitions wanted
  */
 static int
 replaces (int kind, int f, int n)
@@ -903,17 +903,14 @@ replaces (int kind, int f, int n)
   /* Ask the user for the text of a pattern.
    */
   if ((status = readpattern ((kind == FALSE ? "Replace" : "Query replace"),
-                             &pat[0], TRUE))
-      != TRUE)
+                             &pat[0], TRUE)) != TRUE)
     return status;
 
-  /* Ask for the replacement string.
-   */
+  /* Ask for the replacement string.  */
   if ((status = readpattern ("with", &rpat[0], FALSE)) == ABORT)
     return status;
 
-  /* Find the length of the replacement string.
-   */
+  /* Find the length of the replacement string.  */
   rlength = strlen (&rpat[0]);
 
   /* Set up flags so we can make sure not to do a recursive
@@ -1096,8 +1093,8 @@ replaces (int kind, int f, int n)
 
 /*
  * delins -- Delete a specified length from the current point
- *	then either insert the string directly, or make use of
- *	replacement meta-array.
+ *  then either insert the string directly, or make use of
+ *  replacement meta-array.
  */
 int
 delins (size_t dlength, char *instr, int use_meta)
@@ -1136,9 +1133,9 @@ delins (size_t dlength, char *instr, int use_meta)
 /*
  * expandp -- Expand control key sequences for output.
  *
- * char *srcstr;		string to expand
- * char *deststr;		destination of expanded string
- * int maxlength;		maximum chars in destination
+ * char *srcstr;    string to expand
+ * char *deststr;   destination of expanded string
+ * int maxlength;   maximum chars in destination
  */
 int
 expandp (char *srcstr, char *deststr, int maxlength)
@@ -1187,10 +1184,10 @@ expandp (char *srcstr, char *deststr, int maxlength)
 
 /*
  * boundry -- Return information depending on whether we may search no
- *	further.  Beginning of file and end of file are the obvious
- *	cases, but we may want to add further optional boundry restrictions
- *	in future, a' la VMS EDT.  At the moment, just return TRUE or
- *	FALSE depending on if a boundry is hit (ouch).
+ *  further.  Beginning of file and end of file are the obvious
+ *  cases, but we may want to add further optional boundry restrictions
+ *  in future, a' la VMS EDT.  At the moment, just return TRUE or
+ *  FALSE depending on if a boundry is hit (ouch).
  */
 int
 boundry (struct line *curline, int curoff, int dir)
@@ -1211,11 +1208,11 @@ boundry (struct line *curline, int curoff, int dir)
 
 /*
  * nextch -- retrieve the next/previous character in the buffer,
- *	and advance/retreat the point.
- *	The order in which this is done is significant, and depends
- *	upon the direction of the search.  Forward searches look at
- *	the current character and move, reverse searches move and
- *	look at the character.
+ *  and advance/retreat the point.
+ *  The order in which this is done is significant, and depends
+ *  upon the direction of the search.  Forward searches look at
+ *  the current character and move, reverse searches move and
+ *  look at the character.
  */
 static int
 nextch (struct line **pcurline, int *pcuroff, int dir)
@@ -1259,16 +1256,16 @@ nextch (struct line **pcurline, int *pcuroff, int dir)
 #if MAGIC
 /*
  * mcstr -- Set up the 'magic' array.  The closure symbol is taken as
- *	a literal character when (1) it is the first character in the
- *	pattern, and (2) when preceded by a symbol that does not allow
- *	closure, such as a newline, beginning of line symbol, or another
- *	closure symbol.
+ *  a literal character when (1) it is the first character in the
+ *  pattern, and (2) when preceded by a symbol that does not allow
+ *  closure, such as a newline, beginning of line symbol, or another
+ *  closure symbol.
  *
- *	Coding comment (jmg):  yes, i know i have gotos that are, strictly
- *	speaking, unnecessary.  But right now we are so cramped for
- *	code space that i will grab what i can in order to remain
- *	within the 64K limit.  C compilers actually do very little
- *	in the way of optimizing - they expect you to do that.
+ *  Coding comment (jmg):  yes, i know i have gotos that are, strictly
+ *  speaking, unnecessary.  But right now we are so cramped for
+ *  code space that i will grab what i can in order to remain
+ *  within the 64K limit.  C compilers actually do very little
+ *  in the way of optimizing - they expect you to do that.
  */
 static int
 mcstr (void)
@@ -1391,9 +1388,9 @@ mcstr (void)
 
 /*
  * rmcstr -- Set up the replacement 'magic' array.  Note that if there
- *	are no meta-characters encountered in the replacement string,
- *	the array is never actually created - we will just use the
- *	character array rpat[] as the replacement string.
+ *  are no meta-characters encountered in the replacement string,
+ *  the array is never actually created - we will just use the
+ *  character array rpat[] as the replacement string.
  */
 static int
 rmcstr (void)
@@ -1536,8 +1533,8 @@ rmcclear (void)
 
 /*
  * mceq -- meta-character equality with a character.  In Kernighan & Plauger's
- *	Software Tools, this is the function omatch(), but i felt there
- *	were too many functions with the 'match' name already.
+ *  Software Tools, this is the function omatch(), but i felt there
+ *  were too many functions with the 'match' name already.
  */
 static int
 mceq (int bc, struct magic *mt)
@@ -1588,8 +1585,8 @@ mceq (int bc, struct magic *mt)
 
 /*
  * cclmake -- create the bitmap for the character class.
- *	ppatptr is left pointing to the end-of-character-class character,
- *	so that a loop may automatically increment with safety.
+ *  ppatptr is left pointing to the end-of-character-class character,
+ *  so that a loop may automatically increment with safety.
  */
 static int
 cclmake (char **ppatptr, struct magic *mcptr)

@@ -3,16 +3,16 @@
 
 #include "termio.h"
 
-/*	posix.c
+/*  posix.c
  *
  *      The functions in this file negotiate with the operating system for
  *      characters, and write characters in a barely buffered fashion on the
  *      display. All operating systems.
  *
- *	modified by Petri Kutvonen
+ *  modified by Petri Kutvonen
  *
- *	based on termio.c, with all the old cruft removed, and
- *	fixed for termios rather than the old termio.. Linus Torvalds
+ *  based on termio.c, with all the old cruft removed, and
+ *  fixed for termios rather than the old termio.. Linus Torvalds
  */
 
 #include <errno.h>
@@ -239,7 +239,7 @@ done:
   return c;
 }
 
-/* typahead:	Check to see if any characters are already in the
+/* typahead:  Check to see if any characters are already in the
                 keyboard buffer
 */
 
@@ -258,7 +258,7 @@ typahead (void)
 }
 
 #else
-typedef void _pedantic_empty_translation_unit;
+typedef int dummy;
 #endif /* not POSIX */
 
 /* end of posix.c */
