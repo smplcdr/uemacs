@@ -18,54 +18,57 @@
 #include "retcode.h"
 #include "utf8.h"
 
-char	*fline = NULL ;		/* dynamic return line     */
-static int	flen = 0 ;		/* current allocated length of fline */
-int		ftype ;
-int		fcode ;				/* encoding type FCODE_xxxxx */
-int		fpayload ;			/* actual length of fline content */
+char *fline = NULL;  /* dynamic return line     */
+static int flen = 0; /* current allocated length of fline */
+int ftype;
+int fcode;    /* encoding type FCODE_xxxxx */
+int fpayload; /* actual length of fline content */
 
-
-static FILE		*ffp ;		/* File pointer, all functions. */
-static boolean	eofflag ;	/* end-of-file flag */
-
+static FILE *ffp;   /* File pointer, all functions. */
+static int eofflag; /* end-of-file flag */
 
 /*
  * Open a file for reading.
  */
-fio_code ffropen( const char *fn)
+fio_code
+ffropen (const char *fn)
 {
-    if ((ffp = fopen(fn, "r")) == NULL)
-        return FIOFNF;
-    eofflag = FALSE;
-    ftype = FTYPE_NONE ;
-    fcode = FCODE_ASCII ;
-    return FIOSUC;
+  if ((ffp = fopen (fn, "r")) == NULL)
+    return FIOFNF;
+  eofflag = FALSE;
+  ftype = FTYPE_NONE;
+  fcode = FCODE_ASCII;
+  return FIOSUC;
 }
 
 /*
  * Open a file for writing. Return TRUE if all is well, and FALSE on error
  * (cannot create).
  */
-fio_code ffwopen( const char *fn) {
-    ffp = fopen( fn, "w") ;
-	return (ffp == NULL) ? FIOERR : FIOSUC ;
+fio_code
+ffwopen (const char *fn)
+{
+  ffp = fopen (fn, "w");
+  return (ffp == NULL) ? FIOERR : FIOSUC;
 }
 
 /*
  * Close a file. Should look at the status in all systems.
  */
-fio_code ffclose(void)
+fio_code
+ffclose (void)
 {
-    /* free this since we do not need it anymore */
-    if (fline) {
-        free(fline);
-        fline = NULL;
+  /* free this since we do not need it anymore */
+  if (fline)
+    {
+      free (fline);
+      fline = NULL;
     }
-    eofflag = FALSE;
-    ftype = FTYPE_NONE ;
-    fcode = FCODE_ASCII ;
+  eofflag = FALSE;
+  ftype = FTYPE_NONE;
+  fcode = FCODE_ASCII;
 
-	return (fclose( ffp) != FALSE) ? FIOERR : FIOSUC ;
+  return (fclose (ffp) != FALSE) ? FIOERR : FIOSUC;
 }
 
 /*
@@ -73,18 +76,20 @@ fio_code ffclose(void)
  * and the "nbuf" is its length, less the free newline. Return the status.
  * Check only at the newline.
  */
-fio_code ffputline( char *buf, int nbuf, int dosflag) {
-	fwrite( buf, 1, nbuf, ffp) ;
-	
-	if( dosflag)
-		fputc( '\r', ffp) ;
+fio_code
+ffputline (char *buf, int nbuf, int dosflag)
+{
+  fwrite (buf, 1, nbuf, ffp);
 
-    fputc( '\n', ffp) ;
+  if (dosflag)
+    fputc ('\r', ffp);
 
-    if( ferror( ffp))
-        return FIOERR ;
+  fputc ('\n', ffp);
 
-    return FIOSUC ;
+  if (ferror (ffp))
+    return FIOERR;
+
+  return FIOSUC;
 }
 
 /*
@@ -93,86 +98,99 @@ fio_code ffputline( char *buf, int nbuf, int dosflag) {
  * at the end of the file that don't have a newline present. Check for I/O
  * errors too. Return status.
  */
-fio_code ffgetline( void) {
-	int c ;		/* current character read */
-	int i ;		/* current index into fline */
-	int lcode = FCODE_ASCII ;	/* line encoding, defaults to ASCII */
+fio_code
+ffgetline (void)
+{
+  int c;                   /* current character read */
+  int i;                   /* current index into fline */
+  int lcode = FCODE_ASCII; /* line encoding, defaults to ASCII */
 
-/* if we are at the end...return it */
-	if( eofflag)
-		return FIOEOF ;
+  /* if we are at the end...return it */
+  if (eofflag)
+    return FIOEOF;
 
-/* dump fline if it ended up too big */
-	if( flen > NSTRING) {
-		free( fline) ;
-		fline = NULL ;
-	}
+  /* dump fline if it ended up too big */
+  if (flen > NSTRING)
+    {
+      free (fline);
+      fline = NULL;
+    }
 
-/* if we don't have an fline, allocate one */
-	if( fline == NULL)
-		if( (fline = malloc( flen = NSTRING)) == NULL)
-			return FIOMEM ;
+  /* if we don't have an fline, allocate one */
+  if (fline == NULL)
+    if ((fline = malloc (flen = NSTRING)) == NULL)
+      return FIOMEM;
 
-/* read the line in */
-	i = 0 ;
-	while( (c = fgetc( ffp)) != EOF && c != '\r' && c != '\n') {
-	/* if line is full, get more room */
-		if( i >= flen) {
-			char *tmpline ;	/* temp storage for expanding line */
+  /* read the line in */
+  i = 0;
+  while ((c = fgetc (ffp)) != EOF && c != '\r' && c != '\n')
+    {
+      /* if line is full, get more room */
+      if (i >= flen)
+        {
+          char *tmpline; /* temp storage for expanding line */
 
-			tmpline = malloc( flen + NSTRING) ;
-			if( tmpline == NULL)
-				return FIOMEM ;
+          tmpline = malloc (flen + NSTRING);
+          if (tmpline == NULL)
+            return FIOMEM;
 
-			memcpy( tmpline, fline, flen) ;
-			flen += NSTRING ;
-			free( fline) ;
-			fline = tmpline ;
-		}
+          memcpy (tmpline, fline, flen);
+          flen += NSTRING;
+          free (fline);
+          fline = tmpline;
+        }
 
-		fline[ i++] = c ;
-		lcode |= c ;
-	}
+      fline[i++] = c;
+      lcode |= c;
+    }
 
-	fpayload = i ;
-	lcode &= FCODE_MASK ;
-	if( lcode && (fcode != FCODE_MIXED)) {	/* line contains extended chars */
-	/* Check if consistent UTF-8 encoding */
-		int pos = 0 ;
+  fpayload = i;
+  lcode &= FCODE_MASK;
+  if (lcode && (fcode != FCODE_MIXED))
+    { /* line contains extended chars */
+      /* Check if consistent UTF-8 encoding */
+      int pos = 0;
 
-		while( (pos < i) && (lcode != FCODE_MIXED)) {
-			unicode_t uc ;
-			int bytes ;
+      while ((pos < i) && (lcode != FCODE_MIXED))
+        {
+          unicode_t uc;
+          int bytes;
 
-			bytes = utf8_to_unicode( fline, pos, i, &uc) ;
-			pos += bytes ;
-			if( bytes > 1)		/* Multi byte UTF-8 sequence */
-				lcode |= FCODE_UTF_8 ;
-			else if( uc > 127)	/* Extended ASCII */
-				lcode |= FCODE_EXTND ;
-		}
+          bytes = utf8_to_unicode (fline, pos, i, &uc);
+          pos += bytes;
+          if (bytes > 1) /* Multi byte UTF-8 sequence */
+            lcode |= FCODE_UTF_8;
+          else if (uc > 127) /* Extended ASCII */
+            lcode |= FCODE_EXTND;
+        }
 
-		fcode |= lcode ;
-	}
+      fcode |= lcode;
+    }
 
-/* test for any errors that may have occured */
-	if( c == EOF) {
-		if( ferror( ffp))
-			return FIOERR ;
+  /* test for any errors that may have occured */
+  if (c == EOF)
+    {
+      if (ferror (ffp))
+        return FIOERR;
 
-		if( i != 0)
-			eofflag = TRUE ;
-		else
-			return FIOEOF ;
-	} else if( c == '\r') {
-		c = fgetc( ffp) ;
-		if( c != '\n') {
-			ftype |= FTYPE_MAC ;
-			ungetc( c, ffp) ;
-		} else
-			ftype |= FTYPE_DOS ;
-	} else /* c == '\n' */
-		ftype |= FTYPE_UNIX ;
+      if (i != 0)
+        eofflag = TRUE;
+      else
+        return FIOEOF;
+    }
+  else if (c == '\r')
+    {
+      c = fgetc (ffp);
+      if (c != '\n')
+        {
+          ftype |= FTYPE_MAC;
+          ungetc (c, ffp);
+        }
+      else
+        ftype |= FTYPE_DOS;
+    }
+  else /* c == '\n' */
+    ftype |= FTYPE_UNIX;
 
-    return FIOSUC ;
+  return FIOSUC;
 }
