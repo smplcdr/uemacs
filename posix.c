@@ -18,11 +18,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
+#if defined(_FREEBSD_C_SOURCE)
+# define __BSD_VISIBLE 1
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+
+#if defined(_FREEBSD_C_SOURCE)
+# define COMPAT_43TTY 1
+# include <sys/ioctl_compat.h>
+# include <sys/ttydefaults.h>
+#endif
 
 #include "estruct.h"
 #include "retcode.h"
@@ -42,6 +51,12 @@ int ttcol = HUGE ;		/* Column location of HW cursor */
 #define XCASE 0
 #define ECHOPRT 0
 #define PENDIN 0
+#endif
+
+#if defined(_FREEBSD_C_SOURCE)
+# define ECHOCTL 0x00000040 /* echo control chars as ^(Char) */
+# define ECHOPRT 0x00000020 /* visual erase mode for hardcopy */
+# define ECHOKE  0x00000001 /* visual erase for line kill */
 #endif
 
 static int kbdflgs;			/* saved keyboard fd flags      */

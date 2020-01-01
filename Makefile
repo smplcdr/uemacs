@@ -1,4 +1,4 @@
-# Makefile for uEMACS, updated Tue, Aug 13, 2019  7:59:24 AM
+# Makefile for uEMACS, updated Wed Dec 25 11:21:58 MSK 2019
 
 SRC=basic.c bind.c bindable.c buffer.c display.c ebind.c eval.c exec.c execute.c file.c fileio.c flook.c input.c isearch.c line.c lock.c main.c mingw32.c mlout.c names.c pklock.c posix.c random.c region.c search.c spawn.c tcap.c termio.c utf8.c util.c window.c word.c wrapper.c wscreen.c
 OBJ=basic.o bind.o bindable.o buffer.o display.o ebind.o eval.o exec.o execute.o file.o fileio.o flook.o input.o isearch.o line.o lock.o main.o mingw32.o mlout.o names.o pklock.o posix.o random.o region.o search.o spawn.o tcap.o termio.o utf8.o util.o window.o word.o wrapper.o wscreen.o
@@ -39,6 +39,7 @@ endif
 ifeq ($(uname_S),FreeBSD)
  DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_FREEBSD_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
 endif
+ LIBS=-ltermcap
 ifeq ($(uname_S),Darwin)
  DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_DARWIN_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
 endif
@@ -133,7 +134,7 @@ depend: ${SRC}
 	$(Q) ${CC} ${CFLAGS} ${DEFINES} -c $*.c
 
 # DO NOT DELETE THIS LINE -- make depend uses it
-# Updated Tue, Aug 13, 2019  7:51:49 AM
+# Updated Wed Dec 25 11:21:02 MSK 2019
 
 basic.o: basic.c basic.h retcode.h input.h bind.h mlout.h random.h \
  terminal.h defines.h utf8.h window.h buffer.h line.h
@@ -182,7 +183,7 @@ names.o: names.c names.h basic.h retcode.h bind.h bindable.h buffer.h \
  line.h utf8.h display.h estruct.h eval.h exec.h file.h isearch.h \
  region.h random.h search.h spawn.h window.h defines.h word.h
 pklock.o: pklock.c estruct.h pklock.h
-posix.o: posix.c
+posix.o: posix.c termio.h utf8.h estruct.h retcode.h
 random.o: random.c random.h retcode.h basic.h buffer.h line.h utf8.h \
  display.h estruct.h execute.h input.h bind.h search.h terminal.h \
  defines.h window.h
@@ -196,7 +197,7 @@ spawn.o: spawn.c spawn.h defines.h buffer.h line.h retcode.h utf8.h \
  window.h
 tcap.o: tcap.c terminal.h defines.h retcode.h utf8.h display.h estruct.h \
  termio.h
-termio.o: termio.c termio.h utf8.h estruct.h retcode.h
+termio.o: termio.c
 utf8.o: utf8.c utf8.h
 util.o: util.c util.h
 window.o: window.c window.h defines.h buffer.h line.h retcode.h utf8.h \
