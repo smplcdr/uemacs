@@ -38,8 +38,8 @@ ifeq ($(uname_S),Linux)
 endif
 ifeq ($(uname_S),FreeBSD)
  DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_FREEBSD_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
-endif
  LIBS=-ltermcap
+endif
 ifeq ($(uname_S),Darwin)
  DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_DARWIN_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
 endif
