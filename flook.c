@@ -66,8 +66,8 @@ fexist (const char *fname)
 char *
 flook (const char *fname, int hflag)
 {
-  unsigned i; /* index */
-  ssize_t len;
+  unsigned int i; /* Index.  */
+  int len;
   static char fspec[NSTRING]; /* full path spec to search */
 
 #if ENVFUNC
@@ -86,7 +86,7 @@ flook (const char *fname, int hflag)
       home = getenv ("HOME");
       if (home != NULL)
         {
-          size_t home_len = strlen (home);
+          int home_len = strlen (home);
           if (len > home_len + 1)
             {
               /* Build home dir file spec.  */
@@ -155,7 +155,7 @@ flook (const char *fname, int hflag)
 
   /* look it up via the old table method */
   for (i = 2; i < PATHNAME_SIZE; i++)
-    if (len >= strlen (pathname[i]))
+    if (len >= (int) strlen (pathname[i]))
       {
         strcpy (fspec, pathname[i]);
         strcat (fspec, fname);
