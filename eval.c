@@ -10,9 +10,11 @@
  */
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <time.h>
 
 #include "basic.h"
@@ -35,27 +37,29 @@
 
 #define MAXVARS 255
 
-/*  Macro argument token types          */
-
-#define TKNUL 0  /* end-of-string                */
-#define TKARG 1  /* interactive argument         */
-#define TKBUF 2  /* buffer argument              */
-#define TKVAR 3  /* user variables               */
-#define TKENV 4  /* environment variables        */
-#define TKFUN 5  /* function....                 */
-#define TKDIR 6  /* directive                    */
-#define TKLBL 7  /* line label                   */
-#define TKLIT 8  /* numeric literal              */
-#define TKSTR 9  /* quoted string literal        */
-#define TKCMD 10 /* command name                 */
+/* Macro argument token types.  */
+enum
+{
+  TKNUL, /* End of string.  */
+  TKARG, /* Interactive argument.  */
+  TKBUF, /* Buffer argument.  */
+  TKVAR, /* User variables.  */
+  TKENV, /* Environment variables.  */
+  TKFUN, /* Function.  */
+  TKDIR, /* Directive.  */
+  TKLBL, /* Line label.  */
+  TKLIT, /* Numeric literal.  */
+  TKSTR, /* Quoted string literal.  */
+  TKCMD  /* Command name.  */
+};
 
 static int gettyp (char *token);
 
-/* Emacs global flag bit definitions (for gflags). */
+/* Emacs global flag bit definitions (for gflags).  */
 /* if GFREAD is set, current buffer will be set on first file (read in) */
 #define GFREAD 1
 
-static int gflags = GFREAD; /* global control flag    */
+static int gflags = GFREAD; /* global control flag.  */
 
 int
 readfirst_f (void)
@@ -63,17 +67,17 @@ readfirst_f (void)
   return GFREAD == (gflags & GFREAD);
 }
 
-int macbug = FALSE;           /* macro debuging flag          */
-int cmdstatus = TRUE;         /* last command status          */
-static int flickcode = FALSE; /* do flicker supression?       */
-int rval = 0;                 /* return value of a subprocess */
+bool macbug = FALSE;           /* macro debuging flag          */
+bool cmdstatus = TRUE;         /* last command status          */
+static bool flickcode = FALSE; /* do flicker supression?       */
+int rval = 0;                  /* return value of a subprocess */
 
 static int saveflag = 0; /* Flags, saved with the $target var */
 
-long envram = 0l; /* # of bytes current in use by malloc */
+size_t envram = 0; /* # of bytes current in use by malloc */
 
 /* Max #chars in a var name. */
-#define NVSIZE 10
+#define NVSIZE 16
 
 /* Structure to hold user variables and their definitions. */
 struct user_variable
@@ -86,11 +90,10 @@ static char errorm[] = "ERROR"; /* error literal                */
 
 static int seed = 0; /* random number seed           */
 
-static char *ltos (int val);
-static char *mkupper (char *dst, char *src);
+static char *ltos (bool val);
+static char *mkupper (char *dst, const char *src);
 
 /* List of recognized environment variables. */
-
 static const char *envars[] =
 {
   "fillcol",  /* current fill column */
@@ -132,56 +135,59 @@ static const char *envars[] =
   "rval",     /* child process return value */
   "tab",      /* tab width, 1... */
   "hardtab",  /* TRUE for hard coded tab, FALSE for soft ones */
-  "overlap",  "jump",
+  "overlap",
+  "jump",
 #if SCROLLCODE
   "scroll", /* scroll enabled */
 #endif
 };
 
-/* And its preprocesor definitions. */
-
-#define EVFILLCOL 0
-#define EVPAGELEN 1
-#define EVCURCOL 2
-#define EVCURLINE 3
-#define EVRAM 4
-#define EVFLICKER 5
-#define EVCURWIDTH 6
-#define EVCBUFNAME 7
-#define EVCFNAME 8
-#define EVSRES 9
-#define EVDEBUG 10
-#define EVSTATUS 11
-#define EVPALETTE 12
-#define EVASAVE 13
-#define EVACOUNT 14
-#define EVLASTKEY 15
-#define EVCURCHAR 16
-#define EVDISCMD 17
-#define EVVERSION 18
-#define EVPROGNAME 19
-#define EVSEED 20
-#define EVDISINP 21
-#define EVWLINE 22
-#define EVCWLINE 23
-#define EVTARGET 24
-#define EVSEARCH 25
-#define EVREPLACE 26
-#define EVMATCH 27
-#define EVKILL 28
-#define EVCMODE 29
-#define EVGMODE 30
-#define EVTPAUSE 31
-#define EVPENDING 32
-#define EVLWIDTH 33
-#define EVLINE 34
-#define EVGFLAGS 35
-#define EVRVAL 36
-#define EVTAB 37
-#define EVHARDTAB 38
-#define EVOVERLAP 39
-#define EVSCROLLCOUNT 40
-#define EVSCROLL 41
+/* And its preprocesor definitions.  */
+enum
+{
+  EVFILLCOL = 0,
+  EVPAGELEN,
+  EVCURCOL,
+  EVCURLINE,
+  EVRAM,
+  EVFLICKER,
+  EVCURWIDTH,
+  EVCBUFNAME,
+  EVCFNAME,
+  EVSRES,
+  EVDEBUG,
+  EVSTATUS,
+  EVPALETTE,
+  EVASAVE,
+  EVACOUNT,
+  EVLASTKEY,
+  EVCURCHAR,
+  EVDISCMD,
+  EVVERSION,
+  EVPROGNAME,
+  EVSEED,
+  EVDISINP,
+  EVWLINE,
+  EVCWLINE,
+  EVTARGET,
+  EVSEARCH,
+  EVREPLACE,
+  EVMATCH,
+  EVKILL,
+  EVCMODE,
+  EVGMODE,
+  EVTPAUSE,
+  EVPENDING,
+  EVLWIDTH,
+  EVLINE,
+  EVGFLAGS,
+  EVRVAL,
+  EVTAB,
+  EVHARDTAB,
+  EVOVERLAP,
+  EVSCROLLCOUNT,
+  EVSCROLL
+};
 
 enum function_type
 {
@@ -239,7 +245,9 @@ static struct
 {
   const char f_name[4];
   const int f_type;
-} funcs[] = {
+}
+funcs[] =
+{
   { "abs", UFABS | MONAMIC },     /* absolute value of a number */
   { "add", UFADD | DYNAMIC },     /* add two numbers together */
   { "and", UFAND | DYNAMIC },     /* logical and */
@@ -267,7 +275,7 @@ static struct
   { "mod", UFMOD | DYNAMIC },     /* mod */
   { "neg", UFNEG | MONAMIC },     /* negate */
   { "not", UFNOT | MONAMIC },     /* logical not */
-  { "or", UFOR | DYNAMIC },       /* logical or */
+  { "or",  UFOR | DYNAMIC },      /* logical or */
   { "rig", UFRIGHT | DYNAMIC },   /* right string(string, pos) */
   { "rnd", UFRND | MONAMIC },     /* get a random number */
   { "seq", UFSEQUAL | DYNAMIC },  /* string logical equality check */
@@ -296,7 +304,7 @@ struct variable_description
 
 static void findvar (char *var, struct variable_description *vd, int size);
 static int svar (struct variable_description *var, char *value);
-static char *i_to_a (int i);
+static char *i2a (int i);
 
 /*
  * putctext:
@@ -311,11 +319,11 @@ putctext (char *iline)
 
   /* delete the current line */
   curwp->w_doto = 0; /* starting at the beginning of the line */
-  if ((status = killtext (TRUE, 1)) != TRUE)
+  if ((status = killtext (TRUE, 1)) != SUCCESS)
     return status;
 
   /* insert the new line */
-  if ((status = linstr (iline)) != TRUE)
+  if ((status = linstr (iline)) != SUCCESS)
     return status;
   status = lnewline ();
   backline (TRUE, 1);
@@ -326,8 +334,8 @@ static char *result;    /* string result */
 static int ressize = 0; /* mark result as uninitialized */
 
 static int ernd (int i);
-static int sindex (char *source, char *pattern);
-static char *xlat (char *source, char *lookup, char *trans);
+static int sindex (const char *source, const char *pattern);
+static char *xlat (const char *source, const char *lookup, const char *trans);
 
 /* Initialize the user variable list. */
 void
@@ -335,7 +343,7 @@ varinit (void)
 {
   int i;
   for (i = 0; i < MAXVARS; i++)
-    uv[i].u_name[0] = 0;
+    uv[i].u_name[0] = '\0';
 
   if (ressize == 0)
     {
@@ -426,26 +434,25 @@ gtfun (char *fname)
   switch (funcs[fnum].f_type)
     {
       int sz;
-
     case UFADD | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) + atoi (arg2));
+      retstr = i2a (atoi (arg1) + atoi (arg2));
       break;
     case UFSUB | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) - atoi (arg2));
+      retstr = i2a (atoi (arg1) - atoi (arg2));
       break;
     case UFTIMES | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) * atoi (arg2));
+      retstr = i2a (atoi (arg1) * atoi (arg2));
       break;
     case UFDIV | DYNAMIC:
       sz = atoi (arg2);
-      retstr = (sz == 0) ? errorm : i_to_a (atoi (arg1) / sz);
+      retstr = (sz == 0) ? errorm : i2a (atoi (arg1) / sz);
       break;
     case UFMOD | DYNAMIC:
       sz = atoi (arg2);
-      retstr = (sz == 0) ? errorm : i_to_a (atoi (arg1) % sz);
+      retstr = (sz == 0) ? errorm : i2a (atoi (arg1) % sz);
       break;
     case UFNEG | MONAMIC:
-      retstr = i_to_a (-atoi (arg1));
+      retstr = i2a (-atoi (arg1));
       break;
     case UFCAT | DYNAMIC:
       {
@@ -471,7 +478,7 @@ gtfun (char *fname)
 
         sz1 = strlen (arg1);
         sz = 0;
-        for (i = atoi (arg2); i > 0; i -= 1)
+        for (i = atoi (arg2); i > 0; i--)
           {
             unicode_t c;
             int bytc;
@@ -490,7 +497,7 @@ gtfun (char *fname)
             ressize = sz + 1;
           }
 
-        strlcpy (result, arg1, sz + 1);
+        strscpy (result, arg1, sz + 1);
         retstr = result;
       }
       break;
@@ -512,7 +519,7 @@ gtfun (char *fname)
 
         sz1 = strlen (arg1);
         start = 0;
-        for (i = atoi (arg2) - 1; i > 0; i -= 1)
+        for (i = atoi (arg2) - 1; i > 0; i--)
           {
             bytc = utf8_to_unicode (arg1, start, sz1, &c);
             if (bytc == 0)
@@ -522,7 +529,7 @@ gtfun (char *fname)
           }
 
         sz = start;
-        for (i = atoi (arg3); i > 0; i -= 1)
+        for (i = atoi (arg3); i > 0; i--)
           {
             bytc = utf8_to_unicode (arg1, sz, sz1, &c);
             if (bytc == 0)
@@ -539,7 +546,7 @@ gtfun (char *fname)
             ressize = sz + 1;
           }
 
-        strlcpy (result, &arg1[start], sz + 1);
+        strscpy (result, &arg1[start], sz + 1);
         retstr = result;
       }
       break;
@@ -583,7 +590,7 @@ gtfun (char *fname)
       retstr = ltos (stol (arg1) || stol (arg2));
       break;
     case UFLENGTH | MONAMIC:
-      retstr = i_to_a (strlen (arg1));
+      retstr = i2a (strlen (arg1));
       break;
     case UFUPPER | MONAMIC:
       sz = strlen (arg1);
@@ -616,7 +623,7 @@ gtfun (char *fname)
         unicode_t c;
 
         utf8_to_unicode (arg1, 0, 4, &c);
-        retstr = i_to_a (c);
+        retstr = i2a (c);
       }
 
       break;
@@ -642,13 +649,13 @@ gtfun (char *fname)
       retstr = result;
       break;
     case UFRND | MONAMIC:
-      retstr = i_to_a (ernd (atoi (arg1)));
+      retstr = i2a (ernd (atoi (arg1)));
       break;
     case UFABS | MONAMIC:
-      retstr = i_to_a (abs (atoi (arg1)));
+      retstr = i2a (abs (atoi (arg1)));
       break;
     case UFSINDEX | DYNAMIC:
-      retstr = i_to_a (sindex (arg1, arg2));
+      retstr = i2a (sindex (arg1, arg2));
       break;
     case UFENV | MONAMIC:
 #if ENVFUNC
@@ -671,16 +678,16 @@ gtfun (char *fname)
         retstr = "";
       break;
     case UFBAND | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) & atoi (arg2));
+      retstr = i2a (atoi (arg1) & atoi (arg2));
       break;
     case UFBOR | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) | atoi (arg2));
+      retstr = i2a (atoi (arg1) | atoi (arg2));
       break;
     case UFBXOR | DYNAMIC:
-      retstr = i_to_a (atoi (arg1) ^ atoi (arg2));
+      retstr = i2a (atoi (arg1) ^ atoi (arg2));
       break;
     case UFBNOT | MONAMIC:
-      retstr = i_to_a (~atoi (arg1));
+      retstr = i2a (~atoi (arg1));
       break;
     case UFXLATE | TRINAMIC:
       retstr = xlat (arg1, arg2, arg3);
@@ -690,14 +697,9 @@ gtfun (char *fname)
       retstr = errorm;
     }
 
-  if (arg3)
-    free (arg3);
-
-  if (arg2)
-    free (arg2);
-
-  if (arg1)
-    free (arg1);
+  if (arg3 != NULL) free (arg3);
+  if (arg2 != NULL) free (arg2);
+  if (arg1 != NULL) free (arg1);
 
   return retstr;
 }
@@ -760,19 +762,19 @@ gtenv (char *vname)
   switch (vnum)
     {
     case EVFILLCOL:
-      return i_to_a (fillcol);
+      return i2a (fillcol);
     case EVPAGELEN:
-      return i_to_a (term.t_nrow + 1);
+      return i2a (term.t_nrow + 1);
     case EVCURCOL:
-      return i_to_a (getccol (FALSE));
+      return i2a (getccol (FALSE));
     case EVCURLINE:
-      return i_to_a (getcline ());
+      return i2a (getcline ());
     case EVRAM:
-      return i_to_a ((int)(envram / 1024l));
+      return i2a ((int)(envram / 1024l));
     case EVFLICKER:
       return ltos (flickcode);
     case EVCURWIDTH:
-      return i_to_a (term.t_ncol);
+      return i2a (term.t_ncol);
     case EVCBUFNAME:
       return curbp->b_bname;
     case EVCFNAME:
@@ -786,22 +788,21 @@ gtenv (char *vname)
     case EVPALETTE:
       {
         static char palstr[49] = ""; /* palette string */
-
         return palstr;
       }
 
     case EVASAVE:
-      return i_to_a (gasave);
+      return i2a (gasave);
     case EVACOUNT:
-      return i_to_a (gacount);
+      return i2a (gacount);
     case EVLASTKEY:
-      return i_to_a (lastkey);
+      return i2a (lastkey);
     case EVCURCHAR:
       {
         unicode_t c;
 
         lgetchar (&c);
-        return i_to_a (c);
+        return i2a (c);
       }
 
     case EVDISCMD:
@@ -811,16 +812,16 @@ gtenv (char *vname)
     case EVPROGNAME:
       return PROGRAM_NAME_UTF8;
     case EVSEED:
-      return i_to_a (seed);
+      return i2a (seed);
     case EVDISINP:
       return ltos (disinp);
     case EVWLINE:
-      return i_to_a (curwp->w_ntrows);
+      return i2a (curwp->w_ntrows);
     case EVCWLINE:
-      return i_to_a (getwpos ());
+      return i2a (getwpos ());
     case EVTARGET:
       saveflag = lastflag;
-      return i_to_a (curgoal);
+      return i2a (curgoal);
     case EVSEARCH:
       return pat;
     case EVREPLACE:
@@ -830,11 +831,11 @@ gtenv (char *vname)
     case EVKILL:
       return getkill ();
     case EVCMODE:
-      return i_to_a (curbp->b_mode);
+      return i2a (curbp->b_mode);
     case EVGMODE:
-      return i_to_a (gmode);
+      return i2a (gmode);
     case EVTPAUSE:
-      return i_to_a (term.t_pause);
+      return i2a (term.t_pause);
     case EVPENDING:
 #if TYPEAH
       return ltos (typahead ());
@@ -842,21 +843,21 @@ gtenv (char *vname)
       return falsem;
 #endif
     case EVLWIDTH:
-      return i_to_a (llength (curwp->w_dotp));
+      return i2a (llength (curwp->w_dotp));
     case EVLINE:
       return getctext ();
     case EVGFLAGS:
-      return i_to_a (gflags);
+      return i2a (gflags);
     case EVRVAL:
-      return i_to_a (rval);
+      return i2a (rval);
     case EVTAB:
-      return i_to_a (tabwidth);
+      return i2a (tabwidth);
     case EVHARDTAB:
       return ltos (hardtab);
     case EVOVERLAP:
-      return i_to_a (overlap);
+      return i2a (overlap);
     case EVSCROLLCOUNT:
-      return i_to_a (scrollcount);
+      return i2a (scrollcount);
 #if SCROLLCODE
     case EVSCROLL:
       return ltos (term.t_scroll != NULL);
@@ -877,7 +878,7 @@ gtenv (char *vname)
  * int n;   numeric arg (can overide prompted value)
  */
 int
-setvar (int f, int n)
+setvar (bool f, int n)
 {
   int status;                     /* status return */
   struct variable_description vd; /* variable num/type */
@@ -915,7 +916,7 @@ setvar (int f, int n)
         return FALSE;
 
       /* a bit overcautious here */
-      strlcpy (value, i_to_a (n), NSTRING);
+      strscpy (value, i2a (n), NSTRING);
     }
   else
     {
@@ -987,7 +988,6 @@ fvar:
   vtype = -1;
   switch (var[0])
     {
-
     case '$': /* check for legal enviromnent var */
       for (vnum = 0; vnum < ARRAY_SIZE (envars); vnum++)
         if (strcmp (&var[1], envars[vnum]) == 0)
@@ -996,7 +996,6 @@ fvar:
             break;
           }
       break;
-
     case '%': /* check for existing legal user variable */
       for (vnum = 0; vnum < MAXVARS; vnum++)
         if (strcmp (&var[1], uv[vnum].u_name) == 0)
@@ -1006,17 +1005,15 @@ fvar:
           }
       if (vnum < MAXVARS)
         break;
-
       /* create a new one??? */
       for (vnum = 0; vnum < MAXVARS; vnum++)
         if (uv[vnum].u_name[0] == 0)
           {
             vtype = TKVAR;
-            strlcpy (uv[vnum].u_name, &var[1], NVSIZE + 1);
+            strscpy (uv[vnum].u_name, &var[1], NVSIZE + 1);
             break;
           }
       break;
-
     case '&': /* indirect operator? */
       var[4] = 0;
       if (strcmp (&var[1], "ind") == 0)
@@ -1216,14 +1213,14 @@ svar (struct variable_description *var, char *value)
 }
 
 /*
- * i_to_a:
+ * i2a:
  *  integer to ascii string.......... This is too
  *  inconsistant to use the system's
  *
  * int i;   integer to translate to a string
  */
 static char *
-i_to_a (int i)
+i2a (int i)
 {
   unsigned u;
   int sign; /* sign of resulting number */
@@ -1311,7 +1308,7 @@ char *
 getval (char *token)
 {
   int status;               /* error return */
-  struct buffer *bp;        /* temp buffer pointer */
+  buffer_p bp;        /* temp buffer pointer */
   unsigned blen;            /* length of buffer argument */
   int distmp;               /* temporary discmd flag */
   static char buf[NSTRING]; /* string buffer for some returns */
@@ -1335,8 +1332,7 @@ getval (char *token)
 
       /* grab the right buffer */
       strcpy (token, getval (&token[1]));
-      bp = bfind (token, FALSE, 0);
-      if (bp == NULL)
+      if ((bp = bfind (token, 0)) == NULL)
         return errorm;
 
       /* if the buffer is displayed, get the window
@@ -1356,7 +1352,7 @@ getval (char *token)
       if (blen >= sizeof buf)
         blen = sizeof buf - 1;
 
-      strlcpy (buf, bp->b_dotp->l_text + bp->b_doto, blen + 1);
+      strscpy (buf, bp->b_dotp->l_text + bp->b_doto, blen + 1);
 
       /* and step the buffer's line ptr ahead a line */
       bp->b_dotp = bp->b_dotp->l_fp;
@@ -1372,7 +1368,6 @@ getval (char *token)
 
       /* and return the spoils */
       return buf;
-
     case TKVAR:
       return gtusr (token + 1);
     case TKENV:
@@ -1417,36 +1412,47 @@ stol (char *val)
  * int val;   value to translate
  */
 static char *
-ltos (int val)
+ltos (bool val)
 {
-  static char *boolm[] = { "TRUE", "FALSE" };
+  static char *boolm[] = { "FALSE", "TRUE" };
 
-  return boolm[!val];
+  return boolm[val];
 }
 
 /*
  * make a string upper case
  *
- * char *src ;    string to upper case
- * char *dst ;    where to store
+ * char *src      string to upper case
+ * char *dst      where to store
  * dst must be at least as long as src.
  */
 static char *
-mkupper (char *dst, char *src)
+mkupper (char *dst, const char *src)
 {
+  char *sp;
+  char c;
+
+  sp = dst;
+  while ((c = *src++) != '\0')
+    *sp++ = toupper (c);
+  *sp = '\0';
+  return dst;
+
+  /*
   char c, *sp;
 
   sp = dst;
-  while ((c = *src++))
+  while ((c = *src++) != '\0')
     {
       if ('a' <= c && c <= 'z')
         c += 'A' - 'a';
 
       *sp++ = c;
     }
+  *sp = '\0';
 
-  *sp = 0;
   return dst;
+  */
 }
 
 /*
@@ -1460,14 +1466,28 @@ mklower (char *str)
   char *sp;
 
   sp = str;
+  while (*sp != '\0')
+    {
+      *sp = tolower (*sp);
+      sp++;
+    }
+  return str;
+
+  /*
+  char *sp;
+
+  sp = str;
   while (*sp)
     {
       if ('A' <= *sp && *sp <= 'Z')
         *sp += 'a' - 'A';
-      ++sp;
+      sp++;
     }
   return str;
+  */
 }
+
+#define abs(x) (x & ~(1 << (sizeof (x) * CHAR_BIT - 1)))
 
 /*
  * returns a random integer
@@ -1483,44 +1503,46 @@ ernd (int i)
 
   seed = seed * 1721 + 10007;
   s = ((seed >> 16) & 0x0000FFFF) | (seed << 16);
-  s &= ~(1 << 31);    /* avoid abs() */
-  i = i < 0 ? -i : i; /* abs( i) */
-  return (i <= 0) ? s : s % i + 1;
+  if (i == 0)
+    return abs (s);
+  return abs (s) % abs (i) + 1;
 }
+
+#undef abs
 
 /*
  * find pattern within source
  *
- * char *source;  source string to search
- * char *pattern; string to look for
+ * const char *source;  source string to search
+ * const char *pattern; string to look for
  */
 static int
-sindex (char *source, char *pattern)
+sindex (const char *source, const char *pattern)
 {
-  char *sp; /* ptr to current position to scan */
+  const char *sp; /* ptr to current position to scan */
 
   /* scanning through the source string */
   sp = source;
-  while (*sp)
+  while (*sp != '\0')
     {
-      char *csp; /* ptr to source string during comparison */
-      char *cp;  /* ptr to place to check for equality */
+      const char *csp; /* ptr to source string during comparison */
+      const char *cp;  /* ptr to place to check for equality */
 
       /* scan through the pattern */
       cp = pattern;
       csp = sp;
-      while (*cp)
+      while (*cp != '\0')
         {
           if (!eq (*cp, *csp))
             break;
-          ++cp;
-          ++csp;
+          cp++;
+          csp++;
         }
 
       /* was it a match? */
-      if (*cp == 0)
-        return (int)(sp - source) + 1;
-      ++sp;
+      if (*cp == '\0')
+        return (int) (sp - source) + 1;
+      sp++;
     }
 
   /* no match at all.. */
@@ -1535,11 +1557,11 @@ sindex (char *source, char *pattern)
  * char *trans;   resulting translated characters
  */
 static char *
-xlat (char *source, char *lookup, char *trans)
+xlat (const char *source, const char *lookup, const char *trans)
 {
-  char *sp;                    /* pointer into source table */
-  char *lp;                    /* pointer into lookup table */
-  char *rp;                    /* pointer into result */
+  const char *sp; /* pointer into source table */
+  const char *lp; /* pointer into lookup table */
+  char *rp;       /* pointer into result */
   static char result[NSTRING]; /* temporary result */
 
   /* scan source string */
@@ -1583,10 +1605,10 @@ mlforce (char *s)
 {
   int oldcmd; /* original command display flag */
 
-  oldcmd = discmd;               /* save the discmd value */
-  discmd = TRUE;                 /* and turn display on */
-  mlwrite ((*s) ? "%s" : "", s); /* write the string out or erase line */
-  discmd = oldcmd;               /* and restore the original setting */
+  oldcmd = discmd;   /* save the discmd value */
+  discmd = TRUE;     /* and turn display on */
+  mlwrite ("%s", s); /* write the string out or erase line */
+  discmd = oldcmd;   /* and restore the original setting */
 }
 
 /*
@@ -1596,7 +1618,7 @@ mlforce (char *s)
  * int f, n;    arguments ignored
  */
 int
-clrmes (int f, int n)
+clrmes (bool f, int n)
 {
   mlforce ("");
   return TRUE;
@@ -1609,7 +1631,7 @@ clrmes (int f, int n)
  * int f, n;    arguments ignored
  */
 int
-writemsg (int f, int n)
+writemsg (bool f, int n)
 {
   int status;
   char *buf; /* buffer to receive message into */

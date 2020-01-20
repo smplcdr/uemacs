@@ -21,10 +21,10 @@
 #include "terminal.h"
 #include "wrapper.h"
 
-struct window *curwp;  /* Current window               */
-struct window *wheadp; /* Head of list of windows      */
+window_p curwp;  /* Current window.  */
+window_p wheadp; /* Head of list of windows.  */
 
-static struct window *swindow = NULL; /* saved window pointer */
+static window_p swindow = NULL; /* Saved window pointer.  */
 
 /*
  * Reposition dot in the current window to line "n". If the argument is
@@ -33,11 +33,13 @@ static struct window *swindow = NULL; /* saved window pointer */
  * redisplay code does). With no argument it defaults to 0. Bound to M-!.
  */
 int
-reposition (int f, int n)
+reposition (bool f, int n)
 {
-  if (f == FALSE) /* default to 0 to center screen */
-    n = 0;
-  curwp->w_force = n;
+  if (f == FALSE)
+    /* Default to 0 to center screen.  */
+    curwp->w_force = 0;
+  else
+    curwp->w_force = n;
   curwp->w_flag |= WFFORCE;
   return TRUE;
 }
@@ -47,13 +49,13 @@ reposition (int f, int n)
  * argument it recenters "." in the current window. Bound to "C-L".
  */
 int
-redraw (int f, int n)
+redraw (bool f, int n)
 {
   if (f == FALSE)
     sgarbf = TRUE;
   else
     {
-      curwp->w_force = 0; /* Center dot. */
+      curwp->w_force = 0; /* Center dot.  */
       curwp->w_flag |= WFFORCE;
     }
 
@@ -71,15 +73,14 @@ redraw (int f, int n)
  *
  */
 int
-nextwind (int f, int n)
+nextwind (bool f, int n)
 {
-  struct window *wp;
-  int nwindows; /* total number of windows */
+  window_p wp;
+  int nwindows; /* Total number of windows.  */
 
-  if (f)
+  if (f == TRUE)
     {
-
-      /* first count the # of windows */
+      /* First count the # of windows.  */
       wp = wheadp;
       nwindows = 1;
       while (wp->w_wndp != NULL)
@@ -88,16 +89,16 @@ nextwind (int f, int n)
           wp = wp->w_wndp;
         }
 
-      /* if the argument is negative, it is the nth window
-         from the bottom of the screen                        */
+      /* If the argument is negative, it is the nth window
+         from the bottom of the screen.  */
       if (n < 0)
         n = nwindows + n + 1;
 
-      /* if an argument, give them that window from the top */
+      /* If an argument, give them that window from the top.  */
       if (n > 0 && n <= nwindows)
         {
           wp = wheadp;
-          while (--n)
+          while (--n != 0)
             wp = wp->w_wndp;
         }
       else
@@ -121,10 +122,10 @@ nextwind (int f, int n)
  * lot if there is 1 window.
  */
 int
-prevwind (int f, int n)
+prevwind (bool f, int n)
 {
-  struct window *wp1;
-  struct window *wp2;
+  window_p wp1;
+  window_p wp2;
 
   /* if we have an argument, we mean the nth window from the bottom */
   if (f)
@@ -154,7 +155,7 @@ prevwind (int f, int n)
  * "move up". Magic. Bound to "C-X C-N".
  */
 int
-mvdnwind (int f, int n)
+mvdnwind (bool f, int n)
 {
   return mvupwind (f, -n);
 }
@@ -167,21 +168,21 @@ mvdnwind (int f, int n)
  * "C-X C-P".
  */
 int
-mvupwind (int f, int n)
+mvupwind (bool f, int n)
 {
-  struct line *lp;
+  line_p lp;
   int i;
 
   lp = curwp->w_linep;
 
   if (n < 0)
     {
-      while (n++ && lp != curbp->b_linep)
+      while (n++ != 0 && lp != curbp->b_linep)
         lp = lforw (lp);
     }
   else
     {
-      while (n-- && lback (lp) != curbp->b_linep)
+      while (n-- != 0 && lback (lp) != curbp->b_linep)
         lp = lback (lp);
     }
 
@@ -216,10 +217,10 @@ mvupwind (int f, int n)
  * become undisplayed.
  */
 int
-onlywind (int f, int n)
+onlywind (bool f, int n)
 {
-  struct window *wp;
-  struct line *lp;
+  window_p wp;
+  line_p lp;
   int i;
 
   while (wheadp != curwp)
@@ -233,7 +234,7 @@ onlywind (int f, int n)
           wp->w_bufp->b_markp = wp->w_markp;
           wp->w_bufp->b_marko = wp->w_marko;
         }
-      free ((char *)wp);
+      free (wp);
     }
   while (curwp->w_wndp != NULL)
     {
@@ -246,13 +247,13 @@ onlywind (int f, int n)
           wp->w_bufp->b_markp = wp->w_markp;
           wp->w_bufp->b_marko = wp->w_marko;
         }
-      free ((char *)wp);
+      free (wp);
     }
   lp = curwp->w_linep;
   i = curwp->w_toprow;
   while (i != 0 && lback (lp) != curbp->b_linep)
     {
-      --i;
+      i--;
       lp = lback (lp);
     }
   curwp->w_toprow = 0;
@@ -269,10 +270,10 @@ onlywind (int f, int n)
  * int f, n;  arguments are ignored for this command
  */
 int
-delwind (int f, int n)
+delwind (bool f, int n)
 {
-  struct window *wp;  /* window to recieve deleted space */
-  struct window *lwp; /* ptr window before curwp */
+  window_p wp;  /* window to recieve deleted space */
+  window_p lwp; /* ptr window before curwp */
   int target;         /* target line to search for */
 
   /* if there is only one window, don't delete it */
@@ -282,7 +283,7 @@ delwind (int f, int n)
       return FALSE;
     }
 
-  /* find window before curwp in linked list */
+  /* Find window before curwp in linked list.  */
   wp = wheadp;
   lwp = NULL;
   while (wp != NULL)
@@ -337,7 +338,7 @@ delwind (int f, int n)
     wheadp = curwp->w_wndp;
   else
     lwp->w_wndp = curwp->w_wndp;
-  free ((char *)curwp);
+  free (curwp);
   curwp = wp;
   wp->w_flag |= WFHARD;
   curbp = wp->w_bufp;
@@ -356,23 +357,23 @@ delwind (int f, int n)
  * int f, n;  default flag and numeric argument
  */
 int
-splitwind (int f, int n)
+splitwind (bool f, int n)
 {
-  struct window *wp;
-  struct line *lp;
+  window_p wp;
+  line_p lp;
   int ntru;
   int ntrl;
   int ntrd;
-  struct window *wp1;
-  struct window *wp2;
+  window_p wp1;
+  window_p wp2;
 
   if (curwp->w_ntrows < 3)
     {
       mlwrite ("Cannot split a %d line window", curwp->w_ntrows);
       return FALSE;
     }
-  wp = xmalloc (sizeof (struct window));
-  ++curbp->b_nwnd; /* Displayed twice.     */
+  wp = xmalloc (sizeof (*wp));
+  curbp->b_nwnd++; /* Displayed twice.     */
   wp->w_bufp = curbp;
   wp->w_dotp = curwp->w_dotp;
   wp->w_doto = curwp->w_doto;
@@ -391,7 +392,7 @@ splitwind (int f, int n)
   ntrd = 0;
   while (lp != curwp->w_dotp)
     {
-      ++ntrd;
+      ntrd++;
       lp = lforw (lp);
     }
   lp = curwp->w_linep;
@@ -442,10 +443,10 @@ splitwind (int f, int n)
  * move. Bound to "C-X Z".
  */
 int
-enlargewind (int f, int n)
+enlargewind (bool f, int n)
 {
-  struct window *adjwp;
-  struct line *lp;
+  window_p adjwp;
+  line_p lp;
   int i;
 
   if (n < 0)
@@ -500,10 +501,10 @@ enlargewind (int f, int n)
  * "C-X C-Z".
  */
 int
-shrinkwind (int f, int n)
+shrinkwind (bool f, int n)
 {
-  struct window *adjwp;
-  struct line *lp;
+  window_p adjwp;
+  line_p lp;
   int i;
 
   if (n < 0)
@@ -558,7 +559,7 @@ shrinkwind (int f, int n)
  * int f, n;    default flag and numeric argument
  */
 int
-resize (int f, int n)
+resize (bool f, int n)
 {
   int clines; /* current # of lines in window */
 
@@ -581,10 +582,10 @@ resize (int f, int n)
  * Pick the uppermost window that isn't the current window. An LRU algorithm
  * might be better. Return a pointer, or NULL on error.
  */
-struct window *
+window_p
 wpopup (void)
 {
-  struct window *wp;
+  window_p wp;
 
   if (wheadp->w_wndp == NULL            /* Only 1 window        */
       && splitwind (FALSE, 0) == FALSE) /* and it won't split   */
@@ -596,7 +597,7 @@ wpopup (void)
 }
 
 int
-scrnextup (int f, int n)
+scrnextup (bool f, int n)
 { /* scroll the next window up (back) a page */
   nextwind (FALSE, 1);
   backpage (f, n);
@@ -605,7 +606,7 @@ scrnextup (int f, int n)
 }
 
 int
-scrnextdw (int f, int n)
+scrnextdw (bool f, int n)
 { /* scroll the next window down (forward) a page */
   nextwind (FALSE, 1);
   forwpage (f, n);
@@ -613,17 +614,19 @@ scrnextdw (int f, int n)
   return TRUE;
 }
 
+/* save ptr to current window */
 int
-savewnd (int f, int n)
-{ /* save ptr to current window */
+savewnd (bool f, int n)
+{
   swindow = curwp;
   return TRUE;
 }
 
+/* restore the saved screen */
 int
-restwnd (int f, int n)
-{ /* restore the saved screen */
-  struct window *wp;
+restwnd (bool f, int n)
+{
+  window_p wp;
 
   /* find the window */
   wp = wheadp;
@@ -650,12 +653,12 @@ restwnd (int f, int n)
  * int n; numeric argument
  */
 int
-newsize (int f, int n)
+newsize (bool f, int n)
 {
-  struct window *wp;     /* current window being examined */
-  struct window *nextwp; /* next window to scan */
-  struct window *lastwp; /* last window scanned */
-  int lastline;          /* screen line of last line of current window */
+  window_p wp;     /* current window being examined */
+  window_p nextwp; /* next window to scan */
+  window_p lastwp; /* last window scanned */
+  int lastline; /* screen line of last line of current window */
 
   /* if the command defaults, assume the largest */
   if (f == FALSE)
@@ -715,8 +718,8 @@ newsize (int f, int n)
               if (lastwp != NULL)
                 lastwp->w_wndp = NULL;
 
-              /* free the structure */
-              free ((char *)wp);
+              /* Free the structure.  */
+              free (wp);
               wp = NULL;
             }
           else
@@ -747,9 +750,9 @@ newsize (int f, int n)
  * int n;   numeric argument
  */
 int
-newwidth (int f, int n)
+newwidth (bool f, int n)
 {
-  struct window *wp;
+  window_p wp;
 
   /* if the command defaults, assume the largest */
   if (f == FALSE)
@@ -767,34 +770,26 @@ newwidth (int f, int n)
   term.t_margin = n / 10;
   term.t_scrsiz = n - (term.t_margin * 2);
 
-  /* florce all windows to redraw */
-  wp = wheadp;
-  while (wp)
-    {
-      wp->w_flag |= WFHARD | WFMOVE | WFMODE;
-      wp = wp->w_wndp;
-    }
+  /* Florce all windows to redraw.  */
+  for (wp = wheadp; wp != NULL; wp = wp->w_wndp)
+    wp->w_flag |= WFHARD | WFMOVE | WFMODE;
   sgarbf = TRUE;
 
   return TRUE;
 }
 
+/* Get screen offset of current line in current window.  */
 int
 getwpos (void)
-{                  /* get screen offset of current line in current window */
-  int sline;       /* screen line from top of window */
-  struct line *lp; /* scannile line pointer */
+{
+  int sline; /* Screen line from top of window.  */
+  line_p lp; /* Scannile line pointer.  */
 
-  /* search down the line we want */
-  lp = curwp->w_linep;
+  /* Search down the line we want.  */
   sline = 1;
-  while (lp != curwp->w_dotp)
-    {
-      ++sline;
-      lp = lforw (lp);
-    }
+  for (lp = curwp->w_linep; lp != curwp->w_dotp; lp = lforw (lp))
+    sline++;
 
-  /* and return the value */
   return sline;
 }
 

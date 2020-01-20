@@ -1,23 +1,25 @@
-#ifndef _WORD_H_
-#define _WORD_H_
+#ifndef _WORD_H
+#define _WORD_H 1
+
+#include "defines.h"
 
 #define WORDPRO 1
 
-int wrapword (int f, int n);
-int backword (int f, int n);
-int forwword (int f, int n);
-int upperword (int f, int n);
-int lowerword (int f, int n);
-int capword (int f, int n);
-int delfword (int f, int n);
-int delbword (int f, int n);
+int wrapword (bool f, int n);
+int backword (bool f, int n);
+int forwword (bool f, int n);
+int upperword (bool f, int n);
+int lowerword (bool f, int n);
+int capword (bool f, int n);
+int delfword (bool f, int n);
+int delbword (bool f, int n);
 #if WORDPRO
-int gotobop (int f, int n);
-int gotoeop (int f, int n);
-int fillpara (int f, int n);
-int justpara (int f, int n);
-int killpara (int f, int n);
-int wordcount (int f, int n);
+int gotobop (bool f, int n);
+int gotoeop (bool f, int n);
+int fillpara (bool f, int n);
+int justpara (bool f, int n);
+int killpara (bool f, int n);
+int wordcount (bool f, int n);
 #endif
 
 #endif

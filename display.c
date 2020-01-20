@@ -4,22 +4,24 @@
 
 #define REVSTA 1 /* Status line appears in reverse video         */
 
-/*	display.c
+/*  display.c
  *
  *      The functions in this file handle redisplay. There are two halves, the
  *      ones that update the virtual display screen, and the ones that make the
  *      physical display screen the same as the virtual display screen. These
  *      functions use hints that are left in the windows by the commands.
  *
- *	Modified by Petri Kutvonen
+ *  Modified by Petri Kutvonen
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "basic.h"
 #include "buffer.h"
 #include "estruct.h"
 #include "input.h"
@@ -31,36 +33,37 @@
 #include "window.h"
 #include "wrapper.h"
 
+typedef struct video *video_p;
 struct video
 {
-  int v_flag; /* Flags */
+  unsigned int v_flag; /* Flags.  */
 #if COLOR
-  int v_fcolor;  /* current forground color */
-  int v_bcolor;  /* current background color */
-  int v_rfcolor; /* requested forground color */
-  int v_rbcolor; /* requested background color */
+  int v_fcolor;  /* Current forground color.  */
+  int v_bcolor;  /* Current background color.  */
+  int v_rfcolor; /* Requested forground color.  */
+  int v_rbcolor; /* Requested background color.  */
 #endif
-  unicode_t v_text[1]; /* Screen data. */
+  unicode_t v_text[1]; /* Screen data.  */
 };
 
-#define VFCHG 0x0001 /* Changed flag                 */
-#define VFEXT 0x0002 /* extended (beyond column 80)  */
-#define VFREV 0x0004 /* reverse video status         */
-#define VFREQ 0x0008 /* reverse video request        */
-#define VFCOL 0x0010 /* color change requested       */
+#define VFCHG (1 << 0) /* Changed flag                 */
+#define VFEXT (1 << 1) /* extended (beyond column 80)  */
+#define VFREV (1 << 2) /* reverse video status         */
+#define VFREQ (1 << 3) /* reverse video request        */
+#define VFCOL (1 << 4) /* color change requested       */
 
-static struct video **vscreen; /* Virtual screen. */
+static video_p *vscreen; /* Virtual screen.  */
 #if MEMMAP == 0 || SCROLLCODE
-static struct video **pscreen; /* Physical screen. */
+static video_p *pscreen; /* Physical screen.  */
 #endif
 
 static int displaying = TRUE;
 #if UNIX
-#include <signal.h>
+# include <signal.h>
 #endif
 #ifdef SIGWINCH
-#include <sys/ioctl.h>
-/* for window size changes */
+# include <sys/ioctl.h>
+/* For window size changes.  */
 int chg_width, chg_height;
 #endif
 
@@ -71,21 +74,21 @@ static int vtcol = 0;  /* Column location of SW cursor */
 static int lbound = 0; /* leftmost column of current line being displayed */
 static int taboff = 0; /* tab offset for display       */
 
-int mpresf = FALSE;  /* TRUE if message in last line */
-int scrollcount = 1; /* number of lines to scroll */
-int discmd = TRUE;   /* display command flag         */
-int disinp = TRUE;   /* display input characters (echo)	*/
+size_t scrollcount = 1; /* Number of lines to scroll.  */
+bool mpresf = FALSE;    /* TRUE if message in last line.  */
+bool discmd = TRUE;     /* Display command flag.  */
+bool disinp = TRUE;     /* Display input characters (echo).  */
 
-static int reframe (struct window *wp);
-static void updone (struct window *wp);
-static void updall (struct window *wp);
+static int reframe (window_p wp);
+static void updone (window_p wp);
+static void updall (window_p wp);
 static int scrolls (int inserts);
 static void scrscroll (int from, int to, int count);
-static int texttest (int vrow, int prow);
+static bool texttest (int vrow, int prow);
 static int endofline (unicode_t *s, int n);
 static void updext (void);
-static int updateline (int row, struct video *vp1, struct video *vp2);
-static void modeline (struct window *wp);
+static int updateline (int row, video_p vp1, video_p vp2);
+static void modeline (window_p wp);
 static void mlputi (int i, int r);
 static void mlputli (long l, int r);
 static void mlputf (int s);
@@ -105,20 +108,19 @@ void
 vtinit (void)
 {
   int i;
-  struct video *vp;
+  video_p vp;
 
   TTopen ();  /* open the screen */
   TTkopen (); /* open the keyboard */
   TTrev (FALSE);
-  vscreen = xmalloc (term.t_maxrow * sizeof (struct video *));
+  vscreen = xmalloc (term.t_maxrow * sizeof (*vscreen));
 
 #if MEMMAP == 0 || SCROLLCODE
-  pscreen = xmalloc (term.t_maxrow * sizeof (struct video *));
+  pscreen = xmalloc (term.t_maxrow * sizeof (*pscreen));
 #endif
-  for (i = 0; i < term.t_maxrow; ++i)
+  for (i = 0; i < term.t_maxrow; i++)
     {
-      vp = xmalloc (sizeof (struct video)
-                    + term.t_maxcol * sizeof (unicode_t));
+      vp = xmalloc (sizeof (*vp) + term.t_maxcol * sizeof (unicode_t));
       vp->v_flag = 0;
 #if COLOR
       vp->v_rfcolor = 7;
@@ -126,8 +128,7 @@ vtinit (void)
 #endif
       vscreen[i] = vp;
 #if MEMMAP == 0 || SCROLLCODE
-      vp = xmalloc (sizeof (struct video)
-                    + term.t_maxcol * sizeof (unicode_t));
+      vp = xmalloc (sizeof (*vp) + term.t_maxcol * sizeof (unicode_t));
       vp->v_flag = 0;
       pscreen[i] = vp;
 #endif
@@ -135,13 +136,12 @@ vtinit (void)
 }
 
 #if CLEAN
-/* free up all the dynamically allocated video structures */
-
+/* Free up all the dynamically allocated video structures.  */
 void
 vtfree (void)
 {
-  int i;
-  for (i = 0; i < term.t_maxrow; ++i)
+  short i;
+  for (i = 0; i < term.t_maxrow; i++)
     {
       free (vscreen[i]);
 #if MEMMAP == 0 || SCROLLCODE
@@ -164,13 +164,13 @@ vtfree (void)
 void
 vttidy (void)
 {
-  mlerase (); /* ends with movecursor( term.t_nrow, 0) and TTflush() */
+  mlerase (); /* Ends with movecursor(term.t_nrow, 0) and TTflush() */
   TTclose ();
   TTkclose ();
 #ifdef PKCODE
   {
     int ret;
-    ret = write (1, "\r", 1);
+    ret = write (STDOUT_FILENO, "\r", 1);
     if (ret != 1)
       {
         /* some error handling here */
@@ -210,7 +210,7 @@ sane_vtputc (unicode_t c)
   else if (vtcol >= 0)
     vcp[vtcol] = c;
 
-  vtcol += 1;
+  vtcol++;
 }
 
 static void
@@ -222,9 +222,7 @@ vtputc (unicode_t c)
 
   if (c == '\t')
     do
-      {
-        sane_vtputc (' ');
-      }
+      sane_vtputc (' ');
     while (((vtcol + taboff) % tabwidth) != 0);
   else if (c < 0x20 || c == 0x7F)
     {
@@ -247,16 +245,65 @@ vtputs (const char *s)
 {
   int n = 0;
 
-  while (*s)
+  while (*s != '\0')
     {
       unicode_t c;
 
       s += utf8_to_unicode (s, 0, 4, &c);
       vtputc (c);
-      n += 1; /* Assume non wide char unicode */
+      n++; /* Assume non wide char unicode.  */
     }
 
   return n;
+}
+/*
+static int
+vtputi_internal (int i, int r)
+{
+  static int n;
+  int q;
+  static char hexdigits[] = "0123456789ABCDEF";
+  if ((q = i / r) != 0)
+    {
+      n++;
+      vtputi_internal (q, r);
+    }
+  vtputc (hexdigits[i % r]);
+  return n;
+}
+static int
+vtputi (int i, int r)
+{
+  assert (r >= 2 && r <= 16);
+
+  if (i < 0)
+    {
+      i = -i;
+      vtputc ('-');
+    }
+
+  return vtputi_internal (i, r);
+}
+*/
+static int
+vtputi (int i, int r)
+{
+  char buf[16];
+
+  assert (r == 8 || r == 10 || r == 16);
+  switch (r)
+    {
+    case 8:
+      sprintf (buf, "%o", i);
+      break;
+    case 10:
+      sprintf (buf, "%d", i);
+      break;
+    case 16:
+      sprintf (buf, "%x", i);
+      break;
+    }
+  return vtputs (buf);
 }
 
 /*
@@ -274,11 +321,11 @@ vteeol (void)
 
 /*
  * upscreen:
- *	user routine to force a screen update
- *	always finishes complete update
+ *  user routine to force a screen update
+ *  always finishes complete update
  */
 int
-upscreen (int f, int n)
+upscreen (bool f, int n)
 {
   update (TRUE);
   return TRUE;
@@ -295,12 +342,12 @@ static int scrflags;
  * correct for the current window. Third, make the virtual and physical
  * screens the same.
  *
- * int force;		force update past type ahead?
+ * int force;   force update past type ahead?
  */
 int
 update (int force)
 {
-  struct window *wp;
+  window_p wp;
 
 #if TYPEAH && !PKCODE
   if (force == FALSE && typahead ())
@@ -314,9 +361,8 @@ update (int force)
   displaying = TRUE;
 
 #if SCROLLCODE
-
-  /* first, propagate mode line changes to all instances of
-     a buffer displayed in more than one window */
+  /* First, propagate mode line changes to all instances of
+     a buffer displayed in more than one window.  */
   wp = wheadp;
   while (wp != NULL)
     {
@@ -325,7 +371,8 @@ update (int force)
           if (wp->w_bufp->b_nwnd > 1)
             {
               /* make sure all previous windows have this */
-              struct window *owp;
+              window_p owp;
+
               owp = wheadp;
               while (owp != NULL)
                 {
@@ -337,17 +384,16 @@ update (int force)
         }
       wp = wp->w_wndp;
     }
-
 #endif
 
-  /* update any windows that need refreshing */
+  /* Update any windows that need refreshing.  */
   wp = wheadp;
   while (wp != NULL)
     {
       if (wp->w_flag)
         {
-          /* if the window has changed, service it */
-          reframe (wp); /* check the framing */
+          /* If the window has changed, service it.  */
+          reframe (wp); /* Check the framing.  */
 #if SCROLLCODE
           if (wp->w_flag & (WFKILLS | WFINS))
             {
@@ -356,41 +402,41 @@ update (int force)
             }
 #endif
           if ((wp->w_flag & ~WFMODE) == WFEDIT)
-            updone (wp); /* update EDITed line */
+            updone (wp); /* Update EDITed line.  */
           else if (wp->w_flag & ~WFMOVE)
-            updall (wp); /* update all lines */
+            updall (wp); /* Update all lines.  */
 #if SCROLLCODE
           if (scrflags || (wp->w_flag & WFMODE))
 #else
           if (wp->w_flag & WFMODE)
 #endif
-            modeline (wp); /* update modeline */
+            modeline (wp); /* Update modeline.  */
           wp->w_flag = 0;
           wp->w_force = 0;
         }
-      /* on to the next window */
+      /* On to the next window.  */
       wp = wp->w_wndp;
     }
 
-  /* recalc the current hardware cursor location */
+  /* Recalc the current hardware cursor location.  */
   updpos ();
 
 #if MEMMAP && !SCROLLCODE
-  /* update the cursor and flush the buffers */
+  /* Update the cursor and flush the buffers.  */
   movecursor (currow, curcol - lbound);
 #endif
 
-  /* check for lines to de-extend */
+  /* Check for lines to de-extend.  */
   upddex ();
 
-  /* if screen is garbage, re-plot it */
+  /* If screen is garbage, re-plot it.  */
   if (sgarbf != FALSE)
     updgar ();
 
-  /* update the virtual screen to the physical screen */
+  /* Update the virtual screen to the physical screen.  */
   updupd (force);
 
-  /* update the cursor and flush the buffers */
+  /* Update the cursor and flush the buffers.  */
   movecursor (currow, curcol - lbound);
   TTflush ();
   displaying = FALSE;
@@ -398,19 +444,19 @@ update (int force)
   while (chg_width || chg_height)
     newscreensize (chg_height, chg_width);
 #endif
-  return TRUE;
+  return SUCCESS;
 }
 
 /*
  * reframe:
- *	check to see if the cursor is on in the window
- *	and re-frame it if needed or wanted
+ *  check to see if the cursor is on in the window
+ *  and re-frame it if needed or wanted
  */
 static int
-reframe (struct window *wp)
+reframe (window_p wp)
 {
-  struct line *lp, *lp0;
-  int i = 0;
+  line_p lp, lp0;
+  short i = 0;
 
   /* if not a requested reframe, check for a needed one */
   if ((wp->w_flag & WFFORCE) == 0)
@@ -426,7 +472,7 @@ reframe (struct window *wp)
           i = -1;
           lp = lp0;
         }
-      for (; i <= (int)(wp->w_ntrows); i++)
+      for (; i <= wp->w_ntrows; i++)
 #else
       lp = wp->w_linep;
       for (i = 0; i < wp->w_ntrows; i++)
@@ -446,7 +492,7 @@ reframe (struct window *wp)
                   break;
                 }
 #endif
-              return TRUE;
+              return SUCCESS;
             }
 
           /* if we are at the end of the file, reframe */
@@ -493,7 +539,7 @@ reframe (struct window *wp)
   lp = wp->w_dotp;
   while (i != 0 && lback (lp) != wp->w_bufp->b_linep)
     {
-      --i;
+      i--;
       lp = lback (lp);
     }
 
@@ -501,11 +547,11 @@ reframe (struct window *wp)
   wp->w_linep = lp;
   wp->w_flag |= WFHARD;
   wp->w_flag &= ~WFFORCE;
-  return TRUE;
+  return SUCCESS;
 }
 
 static void
-show_line (struct line *lp)
+show_line (line_p lp)
 {
   int i = 0, len = llength (lp);
 
@@ -519,22 +565,22 @@ show_line (struct line *lp)
 
 /*
  * updone:
- *	update the current line	to the virtual screen
+ *  update the current line to the virtual screen
  *
- * struct window *wp;		window to update current line in
+ * window_p wp;   window to update current line in
  */
 static void
-updone (struct window *wp)
+updone (window_p wp)
 {
-  struct line *lp; /* line to update */
-  int sline;       /* physical screen line to update */
+  line_p lp;   /* line to update */
+  short sline; /* physical screen line to update */
 
   /* search down the line we want */
   lp = wp->w_linep;
   sline = wp->w_toprow;
   while (lp != wp->w_dotp)
     {
-      ++sline;
+      sline++;
       lp = lforw (lp);
     }
 
@@ -552,15 +598,15 @@ updone (struct window *wp)
 
 /*
  * updall:
- *	update all the lines in a window on the virtual screen
+ *  update all the lines in a window on the virtual screen
  *
- * struct window *wp;		window to update lines in
+ * window_p wp;   window to update lines in
  */
 static void
-updall (struct window *wp)
+updall (window_p wp)
 {
-  struct line *lp; /* line to update */
-  int sline;       /* physical screen line to update */
+  line_p lp;   /* line to update */
+  short sline; /* physical screen line to update */
 
   /* search down the lines, updating them */
   lp = wp->w_linep;
@@ -585,27 +631,27 @@ updall (struct window *wp)
       vscreen[sline]->v_rbcolor = wp->w_bcolor;
 #endif
       vteeol ();
-      ++sline;
+      sline++;
     }
 }
 
 /*
  * updpos:
- *	update the position of the hardware cursor and handle extended
- *	lines. This is the only update for simple moves.
+ *  update the position of the hardware cursor and handle extended
+ *  lines. This is the only update for simple moves.
  */
 void
 updpos (void)
 {
-  struct line *lp;
-  int i;
+  line_p lp;
+  short i;
 
   /* find the current row */
   lp = curwp->w_linep;
   currow = curwp->w_toprow;
   while (lp != curwp->w_dotp)
     {
-      ++currow;
+      currow++;
       lp = lforw (lp);
     }
 
@@ -626,7 +672,7 @@ updpos (void)
       else if (c >= 0x3000 && c <= 0x3FFF)
         curcol += 2; /* double width unicode character */
       else
-        curcol += 1;
+        curcol++;
     }
 
   /* if extended, flag so and update the virtual line image */
@@ -641,14 +687,14 @@ updpos (void)
 
 /*
  * upddex:
- *	de-extend any line that derserves it
+ *  de-extend any line that derserves it
  */
 void
 upddex (void)
 {
-  struct window *wp;
-  struct line *lp;
-  int i;
+  window_p wp;
+  line_p lp;
+  short i;
 
   wp = wheadp;
 
@@ -674,7 +720,7 @@ upddex (void)
                 }
             }
           lp = lforw (lp);
-          ++i;
+          i++;
         }
       /* and onward to the next window */
       wp = wp->w_wndp;
@@ -683,16 +729,16 @@ upddex (void)
 
 /*
  * updgar:
- *	if the screen is garbage, clear the physical screen and
- *	the virtual screen and force a full update
+ *  if the screen is garbage, clear the physical screen and
+ *  the virtual screen and force a full update
  */
 void
 updgar (void)
 {
   unicode_t *txt;
-  int i, j;
+  short i, j;
 
-  for (i = 0; i < term.t_nrow; ++i)
+  for (i = 0; i < term.t_nrow; i++)
     {
       vscreen[i]->v_flag |= VFCHG;
 #if REVSTA
@@ -704,7 +750,7 @@ updgar (void)
 #endif
 #if MEMMAP == 0 || SCROLLCODE
       txt = pscreen[i]->v_text;
-      for (j = 0; j < term.t_ncol; ++j)
+      for (j = 0; j < term.t_ncol; j++)
         txt[j] = ' ';
 #endif
     }
@@ -720,12 +766,12 @@ updgar (void)
 
 /*
  * updupd:
- *	update the physical screen from the virtual screen
+ *  update the physical screen from the virtual screen
  *
- * int force;		forced update flag
+ * int force;   forced update flag
  */
 int
-updupd (int force)
+updupd (bool force)
 {
   struct video *vp1;
   int i;
@@ -738,7 +784,7 @@ updupd (int force)
   scrflags = 0;
 #endif
 
-  for (i = 0; i < term.t_nrow; ++i)
+  for (i = 0; i < term.t_nrow; i++)
     {
       vp1 = vscreen[i];
 
@@ -746,8 +792,8 @@ updupd (int force)
       if ((vp1->v_flag & VFCHG) != 0)
         {
 #if TYPEAH && !PKCODE
-          if (force == FALSE && typahead ())
-            return TRUE;
+          if (!force && typahead ())
+            return SUCCESS;
 #endif
 #if MEMMAP && !SCROLLCODE
           updateline (i, vp1);
@@ -756,7 +802,7 @@ updupd (int force)
 #endif
         }
     }
-  return TRUE;
+  return SUCCESS;
 }
 
 #if SCROLLCODE
@@ -777,7 +823,7 @@ scrolls (int inserts)
   int from, to;
 
   if (!term.t_scroll) /* no way to scroll */
-    return FALSE;
+    return FAILURE;
 
   rows = term.t_nrow;
   cols = term.t_ncol;
@@ -793,7 +839,7 @@ scrolls (int inserts)
     }
 
   if (first < 0)
-    return FALSE; /* no text changes */
+    return FAILURE; /* no text changes */
 
   vpv = vscreen[first];
   vpp = pscreen[first];
@@ -810,9 +856,7 @@ scrolls (int inserts)
         target = first;
     }
   else
-    {
-      target = first + 1;
-    }
+    target = first + 1;
 
   /* find the matching shifted area */
   match = -1;
@@ -868,7 +912,7 @@ scrolls (int inserts)
           to = target;
         }
       if (2 * count < abs (from - to))
-        return FALSE;
+        return FAILURE;
       scrscroll (from, to, count);
       for (i = 0; i < count; i++)
         {
@@ -900,14 +944,14 @@ scrolls (int inserts)
         {
           unicode_t *txt;
           txt = pscreen[i]->v_text;
-          for (j = 0; j < term.t_ncol; ++j)
+          for (j = 0; j < term.t_ncol; j++)
             txt[j] = ' ';
           vscreen[i]->v_flag |= VFCHG;
         }
 #endif
-      return TRUE;
+      return SUCCESS;
     }
-  return FALSE;
+  return FAILURE;
 }
 
 /* move the "count" lines starting at "from" to "to" */
@@ -915,21 +959,21 @@ static void
 scrscroll (int from, int to, int count)
 {
   ttrow = ttcol = -1;
-  (*term.t_scroll) (from, to, count);
+  TTscroll (from, to, count);
 }
 
 /*
  * return TRUE on text match
  *
- * int vrow, prow;		virtual, physical rows
+ * int vrow, prow;    virtual, physical rows
  */
-static int
+static bool
 texttest (int vrow, int prow)
 {
   struct video *vpv = vscreen[vrow]; /* virtual screen image */
   struct video *vpp = pscreen[prow]; /* physical screen image */
 
-  return !memcmp (vpv->v_text, vpp->v_text, 4 * term.t_ncol);
+  return memcmp (vpv->v_text, vpp->v_text, 4 * term.t_ncol) == 0;
 }
 
 /*
@@ -944,21 +988,20 @@ endofline (unicode_t *s, int n)
       return i + 1;
   return 0;
 }
-
 #endif /* SCROLLCODE */
 
 /*
  * updext:
- *	update the extended line which the cursor is currently
- *	on at a column greater than the terminal width. The line
- *	will be scrolled right or left to let the user see where
- *	the cursor is
+ *  update the extended line which the cursor is currently
+ *  on at a column greater than the terminal width. The line
+ *  will be scrolled right or left to let the user see where
+ *  the cursor is
  */
 static void
 updext (void)
 {
   int rcursor;     /* real cursor location */
-  struct line *lp; /* pointer to current line */
+  line_p lp; /* pointer to current line */
 
   /* calculate what column the real cursor will end up in */
   rcursor = ((curcol - term.t_ncol) % term.t_scrsiz) + term.t_margin;
@@ -984,7 +1027,7 @@ updext (void)
  * row and column variables. It does try an exploit erase to end of line.
  */
 #if MEMMAP
-/*	UPDATELINE specific code for the IBM-PC and other compatables */
+/*  UPDATELINE specific code for the IBM-PC and other compatables */
 
 static int
 updateline (int row, struct video *vp1, struct video *vp2)
@@ -1000,10 +1043,10 @@ updateline (int row, struct video *vp1, struct video *vp2)
   do
     {
       *cp2 = *cp1;
-      ++cp2;
-      ++cp1;
+      cp2++;
+      cp1++;
     }
-  while (--nch);
+  while (--nch != 0);
 #endif
 #if COLOR
   scwrite (row, vp1->v_text, vp1->v_rfcolor, vp1->v_rbcolor);
@@ -1023,25 +1066,24 @@ updateline (int row, struct video *vp1, struct video *vp2)
 /*
  * updateline()
  *
- * int row;		row of screen to update
- * struct video *vp1;	virtual screen image
- * struct video *vp2;	physical screen image
+ * int row;   row of screen to update
+ * struct video *vp1; virtual screen image
+ * struct video *vp2; physical screen image
  */
 static int
 updateline (int row, struct video *vp1, struct video *vp2)
 {
-  /*	UPDATELINE code for all other versions		*/
-
+  /*  UPDATELINE code for all other versions    */
   unicode_t *cp1;
   unicode_t *cp2;
   unicode_t *cp3;
   unicode_t *cp4;
   unicode_t *cp5;
-  int nbflag;      /* non-blanks to the right flag? */
+  bool nbflag;      /* non-blanks to the right flag? */
 #if REVSTA
-  int rev;         /* reverse video flag */
+  bool rev;         /* reverse video flag */
 #endif
-  int req = FALSE; /* reverse video request flag */
+  bool req = FALSE; /* reverse video request flag */
 
   /* set up pointers to virtual and physical lines */
   cp1 = &vp1->v_text[0];
@@ -1057,11 +1099,11 @@ updateline (int row, struct video *vp1, struct video *vp2)
   ** is a request to change the reverse status */
   rev = (vp1->v_flag & VFREV) == VFREV;
   req = (vp1->v_flag & VFREQ) == VFREQ;
-  if (req || (req != rev)
+  if (req || req != rev
 #if COLOR
       || (vp1->v_fcolor != vp1->v_rfcolor) || (vp1->v_bcolor != vp1->v_rbcolor)
 #endif
-  )
+      )
     {
       movecursor (row, 0); /* Go to start of line. */
       TTrev (req);         /* set needed rev video state */
@@ -1072,7 +1114,7 @@ updateline (int row, struct video *vp1, struct video *vp2)
       while (cp1 < cp3)
         {
           TTputc (*cp1);
-          ++ttcol;
+          ttcol++;
           *cp2++ = *cp1++;
         }
 
@@ -1095,8 +1137,8 @@ updateline (int row, struct video *vp1, struct video *vp2)
   /* advance past any common chars at the left */
   while (cp1 != &vp1->v_text[term.t_ncol] && cp1[0] == cp2[0])
     {
-      ++cp1;
-      ++cp2;
+      cp1++;
+      cp2++;
     }
 
   /* This can still happen, even though we only call this routine on changed
@@ -1119,8 +1161,8 @@ updateline (int row, struct video *vp1, struct video *vp2)
 
   while (cp3[-1] == cp4[-1])
     {
-      --cp3;
-      --cp4;
+      cp3--;
+      cp4--;
       if (cp3[0] != ' ') /* Note if any nonblank */
         nbflag = TRUE;   /* in right match. */
     }
@@ -1128,10 +1170,10 @@ updateline (int row, struct video *vp1, struct video *vp2)
   cp5 = cp3;
 
   /* Erase to EOL ? */
-  if (nbflag == FALSE && eolexist == TRUE && (req != TRUE))
+  if (!nbflag && eolexist && !req)
     {
       while (cp5 != cp1 && cp5[-1] == ' ')
-        --cp5;
+        cp5--;
 
       if (cp3 - cp5 <= 3) /* Use only if erase is */
         cp5 = cp3;        /* fewer characters. */
@@ -1143,14 +1185,16 @@ updateline (int row, struct video *vp1, struct video *vp2)
 #endif
 
   while (cp1 != cp5)
-    { /* Ordinary. */
+    {
+      /* Ordinary.  */
       TTputc (*cp1);
-      ++ttcol;
+      ttcol++;
       *cp2++ = *cp1++;
     }
 
   if (cp5 != cp3)
-    { /* Erase. */
+    {
+      /* Erase.  */
       TTeeol ();
       while (cp1 != cp3)
         *cp2++ = *cp1++;
@@ -1170,13 +1214,13 @@ updateline (int row, struct video *vp1, struct video *vp2)
  * any time there is a dirty window.
  */
 static void
-modeline (struct window *wp)
+modeline (window_p wp)
 {
   int n; /* cursor position count */
-  struct buffer *bp;
+  buffer_p bp;
   int i;      /* loop index */
   int lchar;  /* character to draw line in buffer with */
-  int firstm; /* is this the first mode? */
+  bool firstm; /* is this the first mode? */
 
   n = wp->w_toprow + wp->w_ntrows;             /* Location. */
   vscreen[n]->v_flag |= VFCHG | VFREQ | VFCOL; /* Redraw next time. */
@@ -1193,15 +1237,15 @@ modeline (struct window *wp)
 #endif
   else
 #if REVSTA
-      if (revexist)
-    lchar = ' ';
-  else
+    if (revexist)
+      lchar = ' ';
+    else
 #endif
-    lchar = '-';
+      lchar = '-';
 
   bp = wp->w_bufp;
-  vtputc (((bp->b_flag & BFTRUNC) != 0) ? '#' : lchar); /* truncated? */
-  vtputc (((bp->b_flag & BFCHG) != 0) ? '*' : lchar);   /* changed? */
+  vtputc ((bp->b_flag & BFTRUNC) != 0 ? '#' : lchar); /* Truncated? */
+  vtputc ((bp->b_flag & BFCHG) != 0 ? '*' : lchar);   /* Changed? */
   vtputc (' ');
 
   if (n == term.t_nrow - 1)
@@ -1212,7 +1256,7 @@ modeline (struct window *wp)
   n += vtputs (bp->b_bname);
   n += vtputs (" (");
 
-  /* display the modes */
+  /* Display the modes.  */
 
   if ((bp->b_flag & BFTRUNC) != 0)
     {
@@ -1222,10 +1266,10 @@ modeline (struct window *wp)
   else
     firstm = TRUE;
 
-  for (i = 0; i < NUMMODES; i++) /* add in the mode flags */
+  for (i = 0; i < NUMMODES; i++) /* Add in the mode flags.  */
     if (wp->w_bufp->b_mode & (1 << i))
       {
-        if (firstm != TRUE)
+        if (!firstm)
           n += vtputs (" ");
         else
           firstm = FALSE;
@@ -1235,36 +1279,46 @@ modeline (struct window *wp)
 
   n += vtputs (") ");
 
+  /* Unrelaible for now:
+  n += vtputs ("L");
+  n += vtputi (getcline (), 10);
+  n += vtputs (" of L");
+  n += vtputi (100, 10);
+  n += vtputs (" ");
+  */
+
 #if PKCODE
-  if (bp->b_fname[0] != 0 && strcmp (bp->b_bname, bp->b_fname) != 0)
+  if (bp->b_fname[0] != '\0' && strcmp (bp->b_bname, bp->b_fname) != 0)
     {
 #else
-  if (bp->b_fname[0] != 0)
-    { /* File name. */
+  if (bp->b_fname[0] != '\0')
+    {
+      /* File name.  */
       n += vtputs ("File: ");
 #endif
       n += vtputs (bp->b_fname);
       vtputc (' ');
-      ++n;
+      n++;
     }
 
   while (n < term.t_ncol)
-    { /* Pad to full width. */
+    {
+      /* Pad to full width.  */
       vtputc (lchar);
-      ++n;
+      n++;
     }
 
-  { /* determine if top line, bottom line, or both are visible */
-    struct line *lp = wp->w_linep;
+  {
+    /* Determine if top line, bottom line, or both are visible.  */
+    line_p lp = wp->w_linep;
     int rows = wp->w_ntrows;
     char *msg = NULL;
     char tline[6]; /* buffer for part of mode line */
 
     vtcol = n - sizeof (tline) - 1; /* strlen(" top ") plus a couple */
-    while (rows--)
+    while (rows-- != 0)
       {
-        lp = lforw (lp);
-        if (lp == wp->w_bufp->b_linep)
+        if ((lp = lforw (lp)) == wp->w_bufp->b_linep)
           {
             msg = " Bot ";
             break;
@@ -1272,7 +1326,7 @@ modeline (struct window *wp)
       }
     if (lback (wp->w_linep) == wp->w_bufp->b_linep)
       {
-        if (msg)
+        if (msg != NULL)
           {
             if (wp->w_linep == wp->w_bufp->b_linep)
               msg = " Emp ";
@@ -1280,13 +1334,11 @@ modeline (struct window *wp)
               msg = " All ";
           }
         else
-          {
-            msg = " Top ";
-          }
+          msg = " Top ";
       }
-    if (!msg)
+    if (msg == NULL)
       {
-        struct line *lp;
+        line_p lp;
         int numlines, predlines;
 
         lp = lforw (bp->b_linep);
@@ -1295,16 +1347,12 @@ modeline (struct window *wp)
         while (lp != bp->b_linep)
           {
             if (lp == wp->w_linep)
-              {
-                predlines = numlines;
-              }
-            ++numlines;
+              predlines = numlines;
+            numlines++;
             lp = lforw (lp);
           }
         if (wp->w_dotp == bp->b_linep)
-          {
-            msg = " Bot ";
-          }
+          msg = " Bot ";
         else
           {
             int ratio = 0;
@@ -1333,7 +1381,7 @@ modeline (struct window *wp)
 void
 upmode (void)
 { /* update all the mode lines */
-  struct window *wp;
+  window_p wp;
 
   wp = wheadp;
   while (wp != NULL)
@@ -1368,13 +1416,13 @@ void
 mlerase (void)
 {
   movecursor (term.t_nrow, 0);
-  if (discmd != FALSE)
+  if (discmd)
     {
 #if COLOR
       TTforg (7);
       TTbacg (0);
 #endif
-      if (eolexist == TRUE)
+      if (eolexist)
         TTeeol ();
       else
         {
@@ -1396,7 +1444,7 @@ mlputc (unicode_t c)
   if (ttcol < term.t_ncol)
     {
       TTputc (c);
-      ++ttcol;
+      ttcol++;
     }
 }
 
@@ -1411,7 +1459,7 @@ ostring (char *s)
   unsigned char c;
 
   if (discmd)
-    while ((c = *s++) != 0)
+    while ((c = *s++) != '\0')
       mlputc (c);
 }
 
@@ -1421,8 +1469,8 @@ ostring (char *s)
  * stack grows down; this assumption is made by the "++" in the argument scan
  * loop. Set the "message line" flag TRUE.
  *
- * char *fmt;		format string for output
- * char *arg;		pointer to first argument to print
+ * char *fmt;   format string for output
+ * char *arg;   pointer to first argument to print
  */
 void
 vmlwrite (const char *fmt, va_list ap)
@@ -1430,7 +1478,7 @@ vmlwrite (const char *fmt, va_list ap)
   int c; /* current char in format string */
 
   /* if we are not currently echoing on the command line, abort this */
-  if (discmd == FALSE)
+  if (!discmd)
     {
       movecursor (term.t_nrow, 0);
       return;
@@ -1442,60 +1490,57 @@ vmlwrite (const char *fmt, va_list ap)
 #endif
 
   /* if we can not erase to end-of-line, do it manually */
-  if (eolexist == FALSE)
+  if (!eolexist)
     mlerase (); /* ends with movecursor( term.t_nrow, 0) and TTflush() */
   else
     movecursor (term.t_nrow, 0);
 
-  mpresf = *fmt ? TRUE : FALSE; /* flag if line has content or not */
-  while ((c = *fmt++) != 0)
-    if (c != '%')
-      mlputc (c);
-    else if ((c = *fmt++) == 0)
-      {
-        mlputc ('%');
-        break;
-      }
-    else
-      switch (c)
+  mpresf = *fmt != '\0' ? TRUE : FALSE; /* flag if line has content or not */
+  while ((c = *fmt++) != '\0')
+    {
+      if (c != '%')
+        mlputc (c);
+      else if ((c = *fmt++) == '\0')
         {
-        case 'd':
-          mlputi (va_arg (ap, int), 10);
-          break;
-
-        case 'o':
-          mlputi (va_arg (ap, int), 8);
-          break;
-
-        case 'x':
-          mlputi (va_arg (ap, int), 16);
-          break;
-
-        case 'D':
-          mlputli (va_arg (ap, long), 10);
-          break;
-
-        case 's':
-          mlputs ((unsigned char *)va_arg (ap, char *));
-          break;
-
-        case 'f':
-          mlputf (va_arg (ap, int));
-          break;
-
-        case 'B': /* ring a bell */
-          TTbeep ();
-          break;
-
-        default:
           mlputc ('%');
-          /* fallthrough */
-        case '%':
-          mlputc (c);
+          break;
         }
+      else
+        {
+          switch (c)
+            {
+            case 'd':
+              mlputi (va_arg (ap, int), 10);
+              break;
+            case 'o':
+              mlputi (va_arg (ap, int), 8);
+              break;
+            case 'x':
+              mlputi (va_arg (ap, int), 16);
+              break;
+            case 'D':
+              mlputli (va_arg (ap, long), 10);
+              break;
+            case 's':
+              mlputs ((unsigned char *) va_arg (ap, char *));
+              break;
+            case 'f':
+              mlputf (va_arg (ap, int));
+              break;
+            case 'B': /* Ring a bell.  */
+              TTbeep ();
+              break;
+            default:
+              mlputc ('%');
+              /* Fallthrough.  */
+            case '%':
+              mlputc (c);
+            }
+        }
+    }
 
-  /* if we can, erase to the end of screen */
-  if (eolexist == TRUE && ttcol < term.t_ncol)
+  /* If we can, erase to the end of screen.  */
+  if (eolexist && ttcol < term.t_ncol)
     TTeeol ();
 
   TTflush ();
@@ -1521,12 +1566,13 @@ mlputs (unsigned char *s)
 {
   unicode_t c;
 
-  while (((c = *s++) != 0) && (ttcol < term.t_ncol))
+  while ((c = *s++) != '\0' && ttcol < term.t_ncol)
     {
-      if (c == '\t') /* Don't render tabulation */
+      if (c == '\t') /* Do not render tabulation.  */
         c = ' ';
       else if (c > 0xC1 && c <= 0xF4)
-        { /* Accept UTF-8 sequence */
+        {
+          /* Accept UTF-8 sequence.  */
           char utf[4];
           char cc;
           int bytes;
@@ -1534,20 +1580,20 @@ mlputs (unsigned char *s)
           utf[0] = c;
           utf[1] = cc = *s;
           if ((c & 0x20) && ((cc & 0xC0) == 0x80))
-            { /* at least 3 bytes and a valid encoded char */
+            {
+              /* At least 3 bytes and a valid encoded char.  */
               utf[2] = cc = s[1];
-              if ((c & 0x10)
-                  && ((cc & 0xC0)
-                      == 0x80)) /* at least 4 bytes and a valid encoded char */
+              if ((c & 0x10) && ((cc & 0xC0) == 0x80))
+                /* At least 4 bytes and a valid encoded char.  */
                 utf[3] = s[2];
             }
 
-          bytes = utf8_to_unicode (utf, 0, sizeof utf, (unicode_t *)&c);
+          bytes = utf8_to_unicode (utf, 0, sizeof (utf), &c);
           s += bytes - 1;
         }
 
       TTputc (c);
-      ++ttcol;
+      ttcol++;
     }
 }
 
@@ -1578,9 +1624,7 @@ mlputi (int i, int r)
   mlputc (hexdigits[u % r]);
 }
 
-/*
- * do the same except as a long integer.
- */
+/* Do the same except as a long integer.  */
 static void
 mlputli (long l, int r)
 {
@@ -1597,25 +1641,25 @@ mlputli (long l, int r)
   if (q != 0)
     mlputli (q, r);
 
-  mlputc ((int)(l % r) + '0');
+  mlputc ((int) (l % r) + '0');
 }
 
 /*
  * write out a scaled integer with two decimal places
  *
- * int s;		scaled integer to output
+ * int s;   scaled integer to output
  */
 static void
 mlputf (int s)
 {
-  int i; /* integer portion of number */
-  int f; /* fractional portion of number */
+  int i; /* Integer portion of number.  */
+  int f; /* Fractional portion of number.  */
 
-  /* break it up */
+  /* Break it up.  */
   i = s / 100;
   f = s % 100;
 
-  /* send out the integer portion */
+  /* Send out the integer portion.  */
   mlputi (i, 10);
   mlputc ('.');
   mlputc ((f / 10) + '0');
@@ -1625,7 +1669,6 @@ mlputf (int s)
 /* Get terminal size from system.
    Store number of lines into *heightp and width into *widthp.
    If zero or a negative number is stored, the value is not valid.  */
-
 void
 getscreensize (int *widthp, int *heightp)
 {
@@ -1667,13 +1710,14 @@ sizesignal (int signr)
 static int
 newscreensize (int h, int w)
 {
-  /* do the change later */
+  /* Do the change later.  */
   if (displaying)
     {
       chg_width = w;
       chg_height = h;
-      return FALSE;
+      return FAILURE;
     }
+
   chg_width = chg_height = 0;
   if (h <= term.t_mrow)
     newsize (TRUE, h);
@@ -1681,9 +1725,8 @@ newscreensize (int h, int w)
     newwidth (TRUE, w);
 
   update (TRUE);
-  return TRUE;
+  return SUCCESS;
 }
-
 #endif
 
 /*
@@ -1697,7 +1740,7 @@ echoc (unicode_t c)
   if (disinp)
     {
       TTputc (c);
-      ttcol += 1;
+      ttcol++;
     }
 }
 
@@ -1712,10 +1755,10 @@ echos (char *s)
   unicode_t c;
 
   if (disinp)
-    while ((c = *s++))
+    while ((c = *s++) != '\0')
       {
         TTputc (c);
-        ttcol += 1;
+        ttcol++;
       }
 }
 
@@ -1727,7 +1770,7 @@ rubout (void)
       TTputc ('\b');
       TTputc (' ');
       TTputc ('\b');
-      ttcol -= 1;
+      ttcol--;
     }
 }
 

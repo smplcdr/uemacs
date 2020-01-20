@@ -1,23 +1,37 @@
 #include "util.h"
 
-#include <stdio.h>
 #include <string.h>
 
 /*
  * Safe strncpy, the result is always a valid
- * NUL-terminated string that fits in the buffer
+ * NUL-termintated string that fits int the buffer
  * (unless, of course, the buffer size is zero).
  */
 size_t
-strlcpy (char *dst, const char *src, size_t size)
+strscpy (char *dst, const char *src, size_t size)
 {
-  size_t ret = strlen (src);
+  char *ptr;
+  size_t len; /* How many bytes we have to copy.  */
 
-  if (size != 0)
-    {
-      size_t len = (ret >= size) ? size - 1 : ret;
-      memcpy (dst, src, len);
-      dst[len] = '\0';
-    }
-  return ret;
+  ptr = memchr (src, '\0', size);
+  len = ptr != NULL ? ptr - src : size;
+
+  *((char *) memcpy (dst, src, len) + len) = '\0';
+
+  return ptr != NULL ? len : strlen (src);
+}
+
+size_t
+strscat (char *dst, const char *src, size_t size)
+{
+  char *ptr;
+  size_t len;
+
+  ptr = memchr (dst, '\0', size);
+  len = ptr != NULL ? ptr - dst : size;
+
+  if (size == len)
+    return (ptr != NULL ? len : strlen (dst)) + strlen (src);
+  else
+    return (ptr != NULL ? len : strlen (dst)) + strscpy (dst + len, src, size - len);
 }

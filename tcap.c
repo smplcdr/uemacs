@@ -20,8 +20,8 @@
 #define termdef 1 /* Don't define "term" external. */
 
 #ifndef MINGW32
-#include <curses.h>
-#include <term.h>
+# include <curses.h>
+# include <term.h>
 #endif
 
 #include "display.h"
@@ -29,23 +29,21 @@
 #include "termio.h"
 
 #if TERMCAP
-
 int eolexist = TRUE;  /* does clear to EOL exist      */
 int revexist = FALSE; /* does reverse video exist?    */
 int sgarbf = TRUE;    /* TRUE if screen is garbage    */
 
-char sres[16]; /* current screen resolution    */
-               /* NORMAL, CGA, EGA, VGA */
+char sres[16]; /* current screen resolution: NORMAL, CGA, EGA, VGA */
 
-#if UNIX
-#include <signal.h>
-#endif
+# if UNIX
+#  include <signal.h>
+# endif
 
-#define MARGIN 8
-#define SCRSIZ 64
-#define NPAUSE 10 /* # times thru update to pause. */
-#define BEL 0x07
-#define ESC 0x1B
+# define MARGIN 8
+# define SCRSIZ 64
+# define NPAUSE 10 /* # times thru update to pause. */
+# define BEL 0x07
+# define ESC 0x1B
 
 static void tcapkopen (void);
 static void tcapkclose (void);
@@ -54,55 +52,61 @@ static void tcapeeol (void);
 static void tcapeeop (void);
 static void tcapbeep (void);
 static void tcaprev (int);
-static int tcapcres (char *);
+static int  tcapcres (char *);
 static void tcapscrollregion (int top, int bot);
 static void putpad (char *str);
 
 static void tcapopen (void);
-#if PKCODE
+# if PKCODE
 static void tcapclose (void);
-#endif
+# endif
 
-#if COLOR
+# if COLOR
 static void tcapfcol (void);
 static void tcapbcol (void);
-#endif
-#if SCROLLCODE
-static void tcapscroll_reg (int from, int to, int linestoscroll);
-static void tcapscroll_delins (int from, int to, int linestoscroll);
-#endif
+# endif
+# if SCROLLCODE
+static void tcapscroll_reg (int from, int to, int nlines);
+static void tcapscroll_delins (int from, int to, int nlines);
+# endif
 
-#define TCAPSLEN 315
+# define TCAPSLEN 315
 static char tcapbuf[TCAPSLEN];
 static char *UP, PC, *CM, *CE, *CL, *SO, *SE;
 
-#if PKCODE
+# if PKCODE
 static char *TI, *TE;
-#if USE_BROKEN_OPTIMIZATION
+#  if USE_BROKEN_OPTIMIZATION
 static int term_init_ok = 0;
-#endif
-#endif
+#  endif
+# endif
 
-#if SCROLLCODE
+# if SCROLLCODE
 static char *CS, *DL, *AL, *SF, *SR;
-#endif
+# endif
 
-struct terminal term = {
-  270,  /* actual 269 on 1920x1080 landscape terminal window */
-  1910, /* actual 1901 */
-  0,    /* These four values are set dynamically at open time. */
+struct terminal term =
+{
+  270,  /* Actual 269 on 1920x1080 landscape terminal window.  */
+  1910, /* Actual 1901.  */
+
+  /* These four values are set dynamically at open time.  */
   0,
   0,
   0,
+  0,
+
   MARGIN,
   SCRSIZ,
   NPAUSE,
   tcapopen,
-#if PKCODE
+
+# if PKCODE
   tcapclose,
-#else
+# else
   ttclose,
-#endif
+# endif
+
   tcapkopen,
   tcapkclose,
   ttgetc,
@@ -114,15 +118,13 @@ struct terminal term = {
   tcapbeep,
   tcaprev,
   tcapcres
-#if COLOR
-  ,
-  tcapfcol,
-  tcapbcol
-#endif
-#if SCROLLCODE
-  ,
-  NULL /* set dynamically at open time */
-#endif
+# if COLOR
+  , tcapfcol
+  , tcapbcol
+# endif
+# if SCROLLCODE
+  , NULL /* Set dynamically at open time.  */
+# endif
 };
 
 static void
@@ -133,10 +135,10 @@ tcapopen (void)
   char *tv_stype;
   int int_col, int_row;
 
-#if PKCODE && USE_BROKEN_OPTIMIZATION
+# if PKCODE && USE_BROKEN_OPTIMIZATION
   if (!term_init_ok)
     {
-#endif
+# endif
       if ((tv_stype = getenv ("TERM")) == NULL)
         {
           fputs ("Environment variable TERM not defined!\n", stderr);
@@ -185,16 +187,17 @@ tcapopen (void)
       SO = tgetstr ("so", &p);
       if (SO != NULL)
         revexist = TRUE;
-#if PKCODE
+# if PKCODE
       if (tgetnum ("sg") > 0)
-        { /* can reverse be used? P.K. */
+        {
+          /* Can reverse be used? P.K. */
           revexist = FALSE;
           SE = NULL;
           SO = NULL;
         }
-      TI = tgetstr ("ti", &p); /* terminal init and exit */
+      TI = tgetstr ("ti", &p); /* Terminal init and exit.  */
       TE = tgetstr ("te", &p);
-#endif
+# endif
 
       if (CL == NULL || CM == NULL || UP == NULL)
         {
@@ -204,7 +207,7 @@ tcapopen (void)
 
       if (CE == NULL) /* will we be able to use clear to EOL? */
         eolexist = FALSE;
-#if SCROLLCODE
+# if SCROLLCODE
       CS = tgetstr ("cs", &p);
       SF = tgetstr ("sf", &p);
       SR = tgetstr ("sr", &p);
@@ -221,21 +224,21 @@ tcapopen (void)
         term.t_scroll = tcapscroll_delins;
       else
         term.t_scroll = NULL;
-#endif
+# endif
 
       if (p >= &tcapbuf[TCAPSLEN])
         {
           fputs ("Terminal description too big!\n", stderr);
           exit (EXIT_FAILURE);
         }
-#if PKCODE && USE_BROKEN_OPTIMIZATION
+# if PKCODE && USE_BROKEN_OPTIMIZATION
       term_init_ok = 1;
     }
-#endif
+# endif
   ttopen ();
 }
 
-#if PKCODE
+# if PKCODE
 static void
 tcapclose (void)
 {
@@ -244,28 +247,28 @@ tcapclose (void)
   ttflush ();
   ttclose ();
 }
-#endif
+# endif
 
 static void
 tcapkopen (void)
 {
-#if PKCODE
+# if PKCODE
   putpad (TI);
   ttflush ();
   ttrow = 999;
   ttcol = 999;
   sgarbf = TRUE;
-#endif
+# endif
   strcpy (sres, "NORMAL");
 }
 
 static void
 tcapkclose (void)
 {
-#if PKCODE
+# if PKCODE
   putpad (TE);
   ttflush ();
-#endif
+# endif
 }
 
 static void
@@ -303,32 +306,31 @@ tcaprev (int state)
     putpad (SE);
 }
 
-/* Change screen resolution. */
+/* Change screen resolution.  */
 static int
 tcapcres (char *res)
 {
   return TRUE;
 }
 
-#if SCROLLCODE
-
-/* move howmanylines lines starting at from to to */
+# if SCROLLCODE
+/* Move NLINES lines starting at FROM to TO.  */
 static void
-tcapscroll_reg (int from, int to, int howmanylines)
+tcapscroll_reg (int from, int to, int nlines)
 {
   int i;
   if (to == from)
     return;
   if (to < from)
     {
-      tcapscrollregion (to, from + howmanylines - 1);
-      tcapmove (from + howmanylines - 1, 0);
+      tcapscrollregion (to, from + nlines - 1);
+      tcapmove (from + nlines - 1, 0);
       for (i = from - to; i > 0; i--)
         putpad (SF);
     }
   else
-    { /* from < to */
-      tcapscrollregion (from, to + howmanylines - 1);
+    {
+      tcapscrollregion (from, to + nlines - 1);
       tcapmove (from, 0);
       for (i = to - from; i > 0; i--)
         putpad (SR);
@@ -336,9 +338,9 @@ tcapscroll_reg (int from, int to, int howmanylines)
   tcapscrollregion (0, term.t_nrow);
 }
 
-/* move howmanylines lines starting at from to to */
+/* move NLINES lines starting at FROM to TO */
 static void
-tcapscroll_delins (int from, int to, int howmanylines)
+tcapscroll_delins (int from, int to, int nlines)
 {
   int i;
   if (to == from)
@@ -348,15 +350,16 @@ tcapscroll_delins (int from, int to, int howmanylines)
       tcapmove (to, 0);
       for (i = from - to; i > 0; i--)
         putpad (DL);
-      tcapmove (to + howmanylines, 0);
+      tcapmove (to + nlines, 0);
       for (i = from - to; i > 0; i--)
         putpad (AL);
     }
   else
     {
-      tcapmove (from + howmanylines, 0);
+      tcapmove (from + nlines, 0);
       for (i = to - from; i > 0; i--)
         putpad (DL);
+
       tcapmove (from, 0);
       for (i = to - from; i > 0; i--)
         putpad (AL);
@@ -370,10 +373,9 @@ tcapscrollregion (int top, int bot)
   ttputc (PC);
   putpad (tgoto (CS, bot, top));
 }
+# endif
 
-#endif
-
-#if COLOR
+# if COLOR
 /* No colors here, ignore this. */
 static void
 tcapfcol (void)
@@ -386,7 +388,7 @@ tcapbcol (void)
 {
   return;
 }
-#endif
+# endif
 
 static void
 tcapbeep (void)

@@ -7,7 +7,7 @@
 #include <stddef.h>
 
 typedef char spat_t[128];    /* search pattern type */
-#define NPAT sizeof (spat_t) /* # of bytes, pattern		*/
+#define NPAT sizeof (spat_t) /* # of bytes, pattern   */
 
 extern unsigned int matchlen;
 extern char *patmatch;
@@ -27,18 +27,18 @@ extern spat_t rpat; /* replacement pattern          */
 
 int scanner (const char *patrn, int direct, int beg_or_end);
 
-int forwsearch (int f, int n);
-int forwhunt (int f, int n);
-int backsearch (int f, int n);
-int backhunt (int f, int n);
+int forwsearch (bool f, int n);
+int forwhunt (bool f, int n);
+int backsearch (bool f, int n);
+int backhunt (bool f, int n);
 int eq (unsigned char bc, unsigned char pc);
 void savematch (void);
 void rvstrcpy (char *rvstr, char *str);
-int sreplace (int f, int n);
-int qreplace (int f, int n);
-int delins (size_t dlength, char *instr, int use_meta);
+int sreplace (bool f, int n);
+int qreplace (bool f, int n);
+int delins (int dlength, char *instr, int use_meta);
 int expandp (char *srcstr, char *deststr, int maxlength);
-int boundry (struct line *curline, int curoff, int dir);
+int boundry (line_p curline, int curoff, int dir);
 
 void setprompt (char *tpat, unsigned tpat_size, char *prompt, char *apat);
 

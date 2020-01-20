@@ -1,12 +1,12 @@
 /* random.c -- implements random.h */
 #include "random.h"
 
-/*	random.c
+/*  random.c
  *
  *      This file contains the command processing functions for a number of
  *      random commands. There is no functional grouping here, for sure.
  *
- *	Modified by Petri Kutvonen
+ *  Modified by Petri Kutvonen
  */
 
 #include <stdio.h>
@@ -25,33 +25,48 @@
 #include "terminal.h"
 #include "window.h"
 
-static const char *cname[] = { /* names of colors */
-                               "BLACK",
-                               "RED",
-                               "GREEN",
-                               "YELLOW",
-                               "BLUE",
-                               "MAGENTA",
-                               "CYAN",
-                               "WHITE"
+/* Names of colors.  */
+static const char *cname[] =
+{
+  "BLACK",
+  "RED",
+  "GREEN",
+  "YELLOW",
+  "BLUE",
+  "MAGENTA",
+  "CYAN",
+  "WHITE"
 #if PKCODE & IBMPC
-                               ,
-                               "HIGH"
+  , "HIGH"
 #endif
 };
 
-#define NCOLORS (sizeof cname / sizeof (*cname)) /* # of supported colors */
+enum
+{
+  BLACK = 0,
+  RED,
+  GREEN,
+  YELLOW,
+  BLUE,
+  MAGENTA,
+  CYAN,
+  WHITE,
+#if PKCODE & IBMPC
+  HIGH,
+#endif
+  NCOLORS
+};
 
-int gfcolor = NCOLORS - 1; /* global forgrnd color (white)  */
-int gbcolor = 0;           /* global backgrnd color (black) */
+int gfcolor = WHITE; /* Global forgrnd color.  */
+int gbcolor = BLACK; /* Global backgrnd color.  */
 
 int hardtab = TRUE; /* use hard tab instead of soft tab */
 int fillcol = 72;   /* Current fill column           */
 
 /* uninitialized global definitions */
 
-int thisflag; /* Flags, this command		*/
-int lastflag; /* Flags, last command		*/
+int thisflag; /* Flags, this command    */
+int lastflag; /* Flags, last command    */
 
 static int adjustmode (int kind, int global);
 static int cinsert (void);
@@ -60,7 +75,7 @@ static int cinsert (void);
  * Set fill column to n.
  */
 int
-setfillcol (int f, int n)
+setfillcol (bool f, int n)
 {
   fillcol = n;
   mlwrite ("(Fill column is %d)", n);
@@ -75,15 +90,15 @@ setfillcol (int f, int n)
  * Normally this is bound to "C-X =".
  */
 int
-showcpos (int f, int n)
+showcpos (bool f, int n)
 {
-  struct line *lp;   /* current line */
-  long numchars;     /* # of chars in file */
+  line_p lp;         /* current line */
+  int numchars;      /* # of chars in file */
   int numlines;      /* # of lines in file */
-  long predchars;    /* # chars preceding point */
+  int predchars;     /* # chars preceding point */
   int predlines;     /* # lines preceding point */
   unicode_t curchar; /* character under cursor */
-  unsigned bytes;    /* length of unicode sequence */
+  unsigned int bytes;    /* length of unicode sequence */
   int ratio;
   int col;
   int savepos; /* temp save for current offset */
@@ -104,7 +119,7 @@ showcpos (int f, int n)
           predchars = numchars + curwp->w_doto;
         }
       /* on to the next line */
-      ++numlines;
+      numlines++;
       numchars += llength (lp) + ((curbp->b_mode & MDDOS) ? 2 : 1);
     }
 
@@ -127,7 +142,7 @@ showcpos (int f, int n)
 
   ratio = 0; /* Ratio before dot. */
   if (numchars != 0)
-    ratio = (int)((100L * predchars) / numchars);
+    ratio = (100L * predchars) / numchars;
 
   /* summarize and report the info */
   mlwrite ("Line %d/%d Col %d/%d Char %D/%D (%d%%) char = %s%x", predlines + 1,
@@ -138,36 +153,35 @@ showcpos (int f, int n)
 
 int
 getcline (void)
-{                  /* get the current line number */
-  struct line *lp; /* current line */
-  int numlines;    /* # of lines before point */
+{
+  /* Get the current line number.  */
+  line_p lp; /* Current line.  */
+  int numlines; /* # of lines before point.  */
 
-  /* starting at the beginning of the buffer */
+  /* Starting at the beginning of the buffer.  */
   lp = lforw (curbp->b_linep);
 
-  /* start counting lines */
+  /* Start counting lines.  */
   numlines = 0;
   while (lp != curbp->b_linep)
     {
-      /* if we are on the current line, record it */
+      /* If we are on the current line, record it.  */
       if (lp == curwp->w_dotp)
         break;
-      ++numlines;
+      numlines++;
       lp = lforw (lp);
     }
 
-  /* and return the resulting count */
+  /* Return the resulting count.  */
   return numlines + 1;
 }
 
-/*
- * Return current column.  Stop at first non-blank given TRUE argument.
- */
+/* Return current column.  Stop at first non-blank given TRUE argument.  */
 int
 getccol (int bflg)
 {
   int i, col;
-  struct line *dlp = curwp->w_dotp;
+  line_p dlp = curwp->w_dotp;
   int byte_offset = curwp->w_doto;
   int len = llength (dlp);
 
@@ -177,16 +191,16 @@ getccol (int bflg)
       unicode_t c;
 
       i += utf8_to_unicode (dlp->l_text, i, len, &c);
-      if (bflg && c != ' ' && c != '\t') /* Request Stop at first non-blank */
+      if (bflg && c != ' ' && c != '\t') /* Request Stop at first non-blank.  */
         break;
       if (c == '\t')
         col += tabwidth - col % tabwidth;
-      else if (c < 0x20 || c == 0x7F) /* displayed as ^c */
+      else if (c < 0x20 || c == 0x7F) /* Displayed as ^C.  */
         col += 2;
-      else if (c >= 0x80 && c <= 0xa0) /* displayed as \xx */
+      else if (c >= 0x80 && c <= 0xa0) /* Displayed as \xx.  */
         col += 3;
       else
-        col += 1;
+        col++;
     }
   return col;
 }
@@ -194,7 +208,7 @@ getccol (int bflg)
 /*
  * Set current column.
  *
- * int pos;		position to set cursor
+ * int pos;   position to set cursor
  */
 int
 setccol (int pos)
@@ -222,7 +236,7 @@ setccol (int pos)
       else if (c >= 0x80 && c <= 0xa0) /* displayed as \xx */
         col += 3;
       else
-        col += 1;
+        col++;
     }
 
   /* set us at the new position */
@@ -240,7 +254,7 @@ setccol (int pos)
  * to "C-T". This always works within a line, so "WFEDIT" is good enough.
  */
 int
-twiddle (int f, int n)
+twiddle (bool f, int n)
 {
   unicode_t c;
   int len;
@@ -281,12 +295,13 @@ twiddle (int f, int n)
  * inserted 0 times, for regularity. Bound to "C-Q"
  */
 int
-quote (int f, int n)
+quote (bool f, int n)
 {
   int c;
 
-  if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
-    return rdonly ();         /* we are in read only mode     */
+  if (curbp->b_mode & MDVIEW)
+    /* Do not allow this command if we are in read only mode.  */
+    return rdonly ();
   c = tgetc ();
   if (n < 0)
     return FALSE;
@@ -297,10 +312,8 @@ quote (int f, int n)
       int s;
 
       do
-        {
-          s = lnewline ();
-        }
-      while (s == TRUE && --n);
+        s = lnewline ();
+      while (s == TRUE && --n != 0);
       return s;
     }
   return linsert (n, c);
@@ -314,7 +327,7 @@ quote (int f, int n)
  * into "C-I" (in 10 bit code) already. Bound to "C-I".
  */
 int
-insert_tab (int f, int n)
+insert_tab (bool f, int n)
 {
   int status;
 
@@ -326,9 +339,7 @@ insert_tab (int f, int n)
     status = linsert (n, '\t');
   else /* softtab */
     do
-      {
-        status = linsert (tabwidth - getccol (FALSE) % tabwidth, ' ');
-      }
+      status = linsert (tabwidth - getccol (FALSE) % tabwidth, ' ');
     while (status != FALSE && --n);
 
   return status;
@@ -338,29 +349,30 @@ insert_tab (int f, int n)
 /*
  * change tabs to spaces
  *
- * int f, n;		default flag and numeric repeat count
+ * int f, n;    default flag and numeric repeat count
  */
 int
-detab (int f, int n)
+detab (bool f, int n)
 {
-  int inc; /* increment to next line [sgn(n)] */
+  int inc; /* Increment to next line [sgn(n)].  */
 
-  if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
-    return rdonly ();         /* we are in read only mode     */
+  if (curbp->b_mode & MDVIEW)
+    /* Do not allow this command if we are in read only mode.  */
+    return rdonly ();
 
   if (f == FALSE)
     n = 1;
 
-  /* loop thru detabbing n lines */
+  /* Loop thru detabbing N lines.  */
   inc = ((n > 0) ? 1 : -1);
   while (n)
     {
-      curwp->w_doto = 0; /* start at the beginning */
+      curwp->w_doto = 0; /* Start at the beginning.  */
 
-      /* detab the entire current line */
+      /* Detab the entire current line.  */
       while (curwp->w_doto < llength (curwp->w_dotp))
         {
-          /* if we have a tab */
+          /* If we have a tab.  */
           if (curwbyte () == '\t')
             {
               int size;
@@ -374,80 +386,78 @@ detab (int f, int n)
             forwchar (FALSE, 1);
         }
 
-      /* advance/or back to the next line */
+      /* Advance/or back to the next line.  */
       if (forwline (TRUE, inc) == FALSE)
         break;
 
       n -= inc;
     }
-  curwp->w_doto = 0;   /* to the begining of the line */
-  thisflag &= ~CFCPCN; /* flag that this resets the goal column */
-  lchange (WFEDIT);    /* yes, we have made at least an edit */
+  curwp->w_doto = 0; /* To the begining of the line.  */
+  thisflag &= ~CFCPCN; /* Flag that this resets the goal column.  */
+  lchange (WFEDIT); /* Yes, we have made at least an edit.  */
   return (n == 0) ? TRUE : FALSE;
 }
 
 /*
  * change spaces to tabs where posible
  *
- * int f, n;		default flag and numeric repeat count
+ * int f, n;    default flag and numeric repeat count
  */
 int
-entab (int f, int n)
+entab (bool f, int n)
 {
 #define nextab(a) (a + tabwidth - a % tabwidth)
+  int inc; /* Increment to next line [sgn(n)].  */
 
-  int inc; /* increment to next line [sgn(n)] */
-
-  if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
-    return rdonly ();         /* we are in read only mode     */
+  if (curbp->b_mode & MDVIEW)
+    /* Do not allow this command if we are in read only mode.  */
+    return rdonly ();
 
   if (f == FALSE)
     n = 1;
 
-  /* loop thru entabbing n lines */
+  /* Loop thru entabbing N lines.  */
   inc = ((n > 0) ? 1 : -1);
   while (n)
     {
-      int fspace; /* pointer to first space if in a run */
-      int ccol;   /* current cursor column */
+      int fspace; /* Pointer to first space if in a run.  */
+      int ccol; /* Current cursor column.  */
 
-      curwp->w_doto = 0; /* start at the beginning */
+      curwp->w_doto = 0; /* Start at the beginning.  */
 
-      /* entab the entire current line */
+      /* Entab the entire current line.  */
       fspace = -1;
       ccol = 0;
       while (curwp->w_doto < llength (curwp->w_dotp))
         {
-          /* see if it is time to compress */
+          /* See if it is time to compress.  */
           if ((fspace >= 0) && (nextab (fspace) <= ccol))
             {
               if (ccol - fspace < 2)
                 fspace = -1;
               else
                 {
-                  /* there is a bug here dealing with mixed space/tabed
-                     lines.......it will get fixed                */
+                  /* There is a bug here dealing with mixed space/tabed
+                     lines, so it will get fixed.  */
                   backchar (TRUE, ccol - fspace);
-                  ldelete ((long)(ccol - fspace), FALSE);
+                  ldelete (ccol - fspace, FALSE);
                   linsert (1, '\t');
                   fspace = -1;
                 }
             }
 
-          /* get the current character */
+          /* Get the current character.  */
           switch (curwbyte ())
             {
-            case '\t': /* a tab...count em up */
+            case '\t': /* A tab. Count them up.  */
               ccol = nextab (ccol);
               break;
-
-            case ' ': /* a space...compress? */
+            case ' ': /* A space. Compress? */
               if (fspace == -1)
                 fspace = ccol;
               ccol++;
               break;
-
-            default: /* any other char...just count */
+            default: /* Any other char. Just count.  */
               ccol++;
               fspace = -1;
             }
@@ -455,25 +465,25 @@ entab (int f, int n)
           forwchar (FALSE, 1);
         }
 
-      /* advance/or back to the next line */
+      /* Advance/or back to the next line.  */
       if (forwline (TRUE, inc) == FALSE)
         break;
 
       n -= inc;
     }
-  curwp->w_doto = 0;   /* to the begining of the line */
-  thisflag &= ~CFCPCN; /* flag that this resets the goal column */
-  lchange (WFEDIT);    /* yes, we have made at least an edit */
+  curwp->w_doto = 0; /* To the begining of the line.  */
+  thisflag &= ~CFCPCN; /* Flag that this resets the goal column.  */
+  lchange (WFEDIT); /* Yes, we have made at least an edit.  */
   return (n == 0) ? TRUE : FALSE;
 }
 
 /*
  * trim trailing whitespace from the point to eol
  *
- * int f, n;		default flag and numeric repeat count
+ * int f, n;    default flag and numeric repeat count
  */
 int
-trim (int f, int n)
+trim (bool f, int n)
 {
   int inc; /* increment to next line [sgn(n)] */
 
@@ -484,7 +494,7 @@ trim (int f, int n)
     n = 1;
 
   /* loop thru trimming n lines */
-  inc = ((n > 0) ? 1 : -1);
+  inc = (n > 0 ? 1 : -1);
   while (n)
     {
       line_p lp;  /* current line pointer */
@@ -522,7 +532,7 @@ trim (int f, int n)
  * procerssors. They even handle the looping. Normally this is bound to "C-O".
  */
 int
-openline (int f, int n)
+openline (bool f, int n)
 {
   int i;
   int s;
@@ -549,7 +559,7 @@ openline (int f, int n)
  * indentation as specified.
  */
 int
-insert_newline (int f, int n)
+insert_newline (bool f, int n)
 {
   if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
     return rdonly ();         /* we are in read only mode     */
@@ -601,13 +611,13 @@ cinsert (void)
 
   /* save the indent of the previous line */
   nicol = 0;
-  for (i = 0; i < tptr; i += 1)
+  for (i = 0; i < tptr; i++)
     {
       int ch;
 
       ch = cptr[i];
       if (ch == ' ')
-        nicol += 1;
+        nicol++;
       else if (ch == '\t')
         nicol += tabwidth - nicol % tabwidth;
       else
@@ -632,7 +642,7 @@ cinsert (void)
       if (bracef)
         {
           /* and one more tab for a brace */
-          nicol += 1;
+          nicol++;
           i = 0;
         }
 
@@ -657,10 +667,10 @@ cinsert (void)
  * ignored.
  */
 int
-deblank (int f, int n)
+deblank (bool f, int n)
 {
-  struct line *lp1;
-  struct line *lp2;
+  line_p lp1;
+  line_p lp2;
   long nld;
 
   if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
@@ -688,20 +698,20 @@ deblank (int f, int n)
  * subcomands failed. Normally bound to "C-J".
  */
 int
-indent (int f, int n)
+indent (bool f, int n)
 {
   int nicol;
   int i;
 
-  if (curbp->b_mode & MDVIEW) /* don't allow this command if	*/
-    return rdonly ();         /* we are in read only mode		*/
+  if (curbp->b_mode & MDVIEW) /* don't allow this command if  */
+    return rdonly ();         /* we are in read only mode   */
 
   if (n < 0)
     return FALSE;
 
   /* number of columns to indent */
   nicol = 0;
-  for (i = 0; i < llength (curwp->w_dotp); i += 1)
+  for (i = 0; i < llength (curwp->w_dotp); i++)
     {
       int c;
 
@@ -709,7 +719,7 @@ indent (int f, int n)
       if (c == '\t')
         nicol += tabwidth - nicol % tabwidth;
       else if (c == ' ')
-        nicol += 1;
+        nicol++;
       else
         break;
     }
@@ -731,7 +741,7 @@ indent (int f, int n)
  * of text if typed with a big argument. Normally bound to "C-D".
  */
 int
-forwdel (int f, int n)
+forwdel (bool f, int n)
 {
   if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
     return rdonly ();         /* we are in read only mode     */
@@ -758,7 +768,7 @@ forwdel (int f, int n)
  * both "RUBOUT" and "C-H".
  */
 int
-backdel (int f, int n)
+backdel (bool f, int n)
 {
   if (curbp->b_mode & MDVIEW) /* don't allow this command if      */
     return rdonly ();         /* we are in read only mode     */
@@ -787,9 +797,9 @@ backdel (int f, int n)
  * that number of newlines. Normally bound to "C-K".
  */
 int
-killtext (int f, int n)
+killtext (bool f, int n)
 {
-  struct line *nextp;
+  line_p nextp;
   long chunk;
 
   if (curbp->b_mode & MDVIEW)   /* don't allow this command if      */
@@ -831,10 +841,10 @@ killtext (int f, int n)
 /*
  * prompt and set an editor mode
  *
- * int f, n;		default and argument
+ * int f, n;    default and argument
  */
 int
-setemode (int f, int n)
+setemode (bool f, int n)
 {
 #if PKCODE
   return adjustmode (TRUE, FALSE);
@@ -846,10 +856,10 @@ setemode (int f, int n)
 /*
  * prompt and delete an editor mode
  *
- * int f, n;		default and argument
+ * int f, n;    default and argument
  */
 int
-delmode (int f, int n)
+delmode (bool f, int n)
 {
 #if PKCODE
   return adjustmode (FALSE, FALSE);
@@ -861,10 +871,10 @@ delmode (int f, int n)
 /*
  * prompt and set a global editor mode
  *
- * int f, n;		default and argument
+ * int f, n;    default and argument
  */
 int
-setgmode (int f, int n)
+setgmode (bool f, int n)
 {
 #if PKCODE
   return adjustmode (TRUE, TRUE);
@@ -876,10 +886,10 @@ setgmode (int f, int n)
 /*
  * prompt and delete a global editor mode
  *
- * int f, n;		default and argument
+ * int f, n;    default and argument
  */
 int
-delgmode (int f, int n)
+delgmode (bool f, int n)
 {
 #if PKCODE
   return adjustmode (FALSE, TRUE);
@@ -891,8 +901,8 @@ delgmode (int f, int n)
 /*
  * change the editor mode status
  *
- * int kind;		true = set,          false = delete
- * int global;		true = global flag,  false = current buffer flag
+ * int kind;    true = set,          false = delete
+ * int global;    true = global flag,  false = current buffer flag
  */
 static int
 adjustmode (int kind, int global)
@@ -987,12 +997,12 @@ adjustmode (int kind, int global)
 /*
  * the cursor is moved to a matching fence
  *
- * int f, n;		not used
+ * int f, n;    not used
  */
 int
-getfence (int f, int n)
+getfence (bool f, int n)
 {
-  struct line *oldlp; /* original line pointer */
+  line_p oldlp; /* original line pointer */
   int oldoff;         /* and offset */
   int sdir;           /* direction of search (1/-1) */
   int count;          /* current fence level count */
@@ -1080,7 +1090,7 @@ getfence (int f, int n)
 #endif
 
 static int
-iovstring (int f, int n, const char *prompt, int (*fun) (char *))
+iovstring (bool f, int n, const char *prompt, int (*fun) (char *))
 {
   int status;    /* status return code */
   char *tstring; /* string to add */
@@ -1108,10 +1118,10 @@ iovstring (int f, int n, const char *prompt, int (*fun) (char *))
  * ask for and insert a string into the current
  * buffer at the current point
  *
- * int f, n;		ignored arguments
+ * int f, n;    ignored arguments
  */
 int
-istring (int f, int n)
+istring (bool f, int n)
 {
   return iovstring (f, n, "String to insert<META>: ", linstr);
 }
@@ -1120,10 +1130,10 @@ istring (int f, int n)
  * ask for and overwite a string into the current
  * buffer at the current point
  *
- * int f, n;		ignored arguments
+ * int f, n;    ignored arguments
  */
 int
-ovstring (int f, int n)
+ovstring (bool f, int n)
 {
   return iovstring (f, n, "String to overwrite<META>: ", lover);
 }

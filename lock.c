@@ -11,71 +11,67 @@
  */
 
 #if BSD | SVR4
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
 
-#include "defines.h"
-#include "display.h"
-#include "input.h"
-#include "retcode.h"
+# include "defines.h"
+# include "display.h"
+# include "input.h"
+# include "retcode.h"
+# include "util.h"
 
-#if (FILOCK && BSD) || SVR4
-#include "pklock.h"
-#endif
+# if (FILOCK && BSD) || SVR4
+#  include "pklock.h"
+# endif
 
-#include <sys/errno.h>
+# include <sys/errno.h>
 
-#define NLOCKS 100          /* max # of file locks active */
-static char *lname[NLOCKS]; /* names of all locked files  */
-static int numlocks;        /* # of current locks active  */
+# define NLOCKS 128         /* Max # of file locks active.  */
+static char *lname[NLOCKS]; /* Names of all locked files.  */
+static int numlocks;        /* # of current locks active.  */
 
 static void lckerror (char *errstr);
 
-/*
- * lockchk:
- *  check a file for locking and add it to the list
- *
- * const char *fname;     file to check for a lock
- */
+/* Check a file for locking and add it to the list.  */
 int
 lockchk (const char *fname)
 {
-  int i;      /* loop indexes */
-  int status; /* return status */
+  int i;
+  int status;
 
-  /* check to see if that file is already locked here */
+  /* Check to see if that file is already locked here.  */
   if (numlocks > 0)
-    for (i = 0; i < numlocks; ++i)
+    for (i = 0; i < numlocks; i++)
       if (strcmp (fname, lname[i]) == 0)
         return TRUE;
 
-  /* if we have a full locking table, bitch and leave */
+  /* If we have a full locking table, bitch and leave.  */
   if (numlocks >= NLOCKS)
     {
       mlwrite ("LOCK ERROR: Lock table full");
       return ABORT;
     }
 
-  /* next, try to lock it */
+  /* Next, try to lock it.  */
   status = lock (fname);
-  if (status == ABORT) /* file is locked, no override */
+  if (status == ABORT) /* File is locked, no override.  */
     return ABORT;
-  if (status == FALSE) /* locked, overriden, dont add to table */
+  if (status == FALSE) /* Locked, overriden, dont add to table.  */
     return TRUE;
 
-  /* we have now locked it, add it to our table */
-  lname[++numlocks - 1] = (char *) malloc (strlen (fname) + 1);
-  if (lname[numlocks - 1] == NULL)
-    {                   /* malloc failure */
-      undolock (fname); /* free the lock */
-      mlwrite ("Cannot lock, out of memory");
-      --numlocks;
+  /* We have now locked it, add it to our table.  */
+  lname[numlocks] = malloc (strlen (fname) + 1);
+  if (lname[numlocks] == NULL)
+    {
+      undolock (fname);
+      mlwrite ("Cannot lock, memory exhausted");
       return ABORT;
     }
 
   /* everthing is cool, add it to the table */
-  strcpy (lname[numlocks - 1], fname);
+  strcpy (lname[numlocks], fname);
+  numlocks++;
   return TRUE;
 }
 
@@ -90,11 +86,11 @@ lockrel (void)
   int status; /* status of locks */
   int s;      /* status of one unlock */
 
-  status = TRUE;
+  status = SUCCESS;
   if (numlocks > 0)
-    for (i = 0; i < numlocks; ++i)
+    for (i = 0; i < numlocks; i++)
       {
-        if ((s = unlock (lname[i])) != TRUE)
+        if ((s = unlock (lname[i])) != SUCCESS)
           status = s;
         free (lname[i]);
       }
@@ -168,14 +164,14 @@ unlock (const char *fname)
  *
  * char *errstr;  lock error string to print out
  */
-void
+static void
 lckerror (char *errstr)
 {
-  char obuf[NSTRING]; /* output buffer for error message */
+  char obuf[NSTRING]; /* Output buffer for error message.  */
 
-  strcpy (obuf, errstr);
-  strcat (obuf, " - ");
-  strcat (obuf, strerror (errno));
+  strscpy (obuf, errstr, sizeof (obuf));
+  strscat (obuf, " -- ", sizeof (obuf));
+  strscat (obuf, strerror (errno), sizeof (obuf));
   mlwrite (obuf);
 }
 

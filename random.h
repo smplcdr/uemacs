@@ -1,47 +1,47 @@
 #ifndef _RANDOM_H_
 #define _RANDOM_H_
 
-#include "retcode.h"
+#include "defines.h"
 
 #define AEDIT 1
 
-extern int fillcol; /* Fill column                  */
-extern int hardtab; /* Use hard tab instead of soft tab */
+extern int fillcol; /* Fill column.  */
+extern int hardtab; /* Use hard tab instead of soft tab.  */
 
-/* Uninitialized global external declarations. */
+/* Uninitialized global external declarations.  */
 
-#define CFCPCN 0x0001 /* Last command was C-P, C-N    */
-#define CFKILL 0x0002 /* Last command was a kill      */
+#define CFCPCN 0x0001 /* Last command was "C-P", "C-N".  */
+#define CFKILL 0x0002 /* Last command was a kill.  */
 
-extern int thisflag; /* Flags, this command          */
-extern int lastflag; /* Flags, last command          */
+extern int thisflag; /* Flags, this command.  */
+extern int lastflag; /* Flags, last command.  */
 
-int setfillcol (int f, int n);
-int showcpos (int f, int n);
+int setfillcol (bool f, int n);
+int showcpos (bool f, int n);
 int getcline (void);
 int getccol (int bflg);
 int setccol (int pos);
-int twiddle (int f, int n);
-int quote (int f, int n);
-int insert_tab (int f, int n);
+int twiddle (bool f, int n);
+int quote (bool f, int n);
+int insert_tab (bool f, int n);
 #if AEDIT
-int detab (int f, int n);
-int entab (int f, int n);
-int trim (int f, int n);
+int detab (bool f, int n);
+int entab (bool f, int n);
+int trim (bool f, int n);
 #endif
-int openline (int f, int n);
-int insert_newline (int f, int n);
-int deblank (int f, int n);
-int indent (int f, int n);
-int forwdel (int f, int n);
-int backdel (int f, int n);
-int killtext (int f, int n);
-int setemode (int f, int n);
-int delmode (int f, int n);
-int setgmode (int f, int n);
-int delgmode (int f, int n);
-int getfence (int f, int n);
-int istring (int f, int n);
-int ovstring (int f, int n);
+int openline (bool f, int n);
+int insert_newline (bool f, int n);
+int deblank (bool f, int n);
+int indent (bool f, int n);
+int forwdel (bool f, int n);
+int backdel (bool f, int n);
+int killtext (bool f, int n);
+int setemode (bool f, int n);
+int delmode (bool f, int n);
+int setgmode (bool f, int n);
+int delgmode (bool f, int n);
+int getfence (bool f, int n);
+int istring (bool f, int n);
+int ovstring (bool f, int n);
 
 #endif

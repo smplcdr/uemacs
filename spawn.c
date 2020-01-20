@@ -1,11 +1,11 @@
 /* spawn.c -- implements spawn.h */
 #include "spawn.h"
 
-/*	spawn.c
+/*  spawn.c
  *
- *	Various operating system access commands.
+ *  Various operating system access commands.
  *
- *	Modified by Petri Kutvonen
+ *  Modified by Petri Kutvonen
  */
 
 #include <stdio.h>
@@ -26,9 +26,9 @@
 #include "window.h"
 
 #if USG | BSD
-#include <signal.h>
-#ifdef SIGWINCH
-#endif
+# include <signal.h>
+# ifdef SIGWINCH
+# endif
 #endif
 
 /*
@@ -37,14 +37,14 @@
  * repaint. Bound to "^X C".
  */
 int
-spawncli (int f, int n)
+spawncli (bool f, int n)
 {
 #if USG | BSD
   char *cp;
 #endif
 
-  /* don't allow this command if restricted */
   if (restflag)
+    /* Do not allow this command if restricted */
     return resterr ();
 
 #if USG | BSD
@@ -55,34 +55,34 @@ spawncli (int f, int n)
   if ((cp = getenv ("SHELL")) != NULL && *cp != '\0')
     em_system (cp);
   else
-#if BSD
+# if BSD
     system ("exec /bin/csh");
-#else
+# else
     em_system ("exec /bin/sh");
-#endif
+# endif
   sgarbf = TRUE;
-  usleep (2000000L);
+  usleep (2000000);
   TTopen ();
   TTkopen ();
-#ifdef SIGWINCH
+# ifdef SIGWINCH
   /*
    * This fools the update routines to force a full
    * redraw with complete window size checking.
-   *		-lbt
+   *    -lbt
    */
   chg_width = term.t_ncol;
   chg_height = term.t_nrow + 1;
   term.t_nrow = term.t_ncol = 0;
-#endif
+# endif
   return TRUE;
 #endif
 }
 
 #if BSD | SVR4
-
 int
-bktoshell (int f, int n)
-{ /* suspend MicroEMACS and wait to wake up */
+bktoshell (bool f, int n)
+{
+  /* suspend MicroEMACS and wait to wake up */
   vttidy ();
   /******************************
           int pid;
@@ -109,7 +109,7 @@ rtfrmshell (void)
  * done. Bound to "C-X !".
  */
 int
-spawn (int f, int n)
+spawn (bool f, int n)
 {
   int s;
   char *line;
@@ -150,9 +150,8 @@ spawn (int f, int n)
  * character to be typed, then mark the screen as garbage so a full repaint is
  * done. Bound to "C-X $".
  */
-
 int
-execprg (int f, int n)
+execprg (bool f, int n)
 {
   int s;
   char *line;
@@ -188,11 +187,11 @@ execprg (int f, int n)
  * Bound to ^X @
  */
 int
-pipecmd (int f, int n)
+pipecmd (bool f, int n)
 {
   int s;             /* return status from CLI */
-  struct window *wp; /* pointer to new window */
-  struct buffer *bp; /* pointer to buffer to zot */
+  window_p wp; /* pointer to new window */
+  buffer_p bp; /* pointer to buffer to zot */
   char *mlarg;
   char *line; /* command line send to shell */
   static char bname[] = "command";
@@ -218,7 +217,7 @@ pipecmd (int f, int n)
   free (mlarg);
 
   /* get rid of the command output buffer if it exists */
-  if ((bp = bfind (bname, FALSE, 0)) != FALSE)
+  if ((bp = bfind (bname, 0)) != NULL)
     {
       /* try to make sure we are off screen */
       wp = wheadp;
@@ -260,6 +259,8 @@ pipecmd (int f, int n)
   sgarbf = TRUE;
   s = TRUE;
 #else
+  free (line);
+
   if (s != TRUE)
     return s;
 #endif
@@ -291,10 +292,10 @@ pipecmd (int f, int n)
  * Bound to ^X #
  */
 int
-filter_buffer (int f, int n)
+filter_buffer (bool f, int n)
 {
   int s;             /* return status from CLI */
-  struct buffer *bp; /* pointer to buffer to zot */
+  buffer_p bp; /* pointer to buffer to zot */
   char *mlarg;
   char *line;     /* command line send to shell */
   fname_t tmpnam; /* place to store real file name */
@@ -352,6 +353,8 @@ filter_buffer (int f, int n)
   TTflush ();
   sgarbf = TRUE;
   s = TRUE;
+#else
+  free (line);
 #endif
 
   /* on failure, escape gracefully */

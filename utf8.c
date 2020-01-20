@@ -40,7 +40,7 @@ utf8_to_unicode (const char *line, unsigned int index, unsigned int len,
   if (c <= 0xC1 || c > 0xF4)
     return 1;
 
-  /* Ok, it's 11xxxxxx, do a stupid decode */
+  /* OK, it's 11xxxxxx, do a stupid decode.  */
   mask = 0x20;
   bytes = 2;
   while ((c & mask) != 0)
@@ -49,14 +49,14 @@ utf8_to_unicode (const char *line, unsigned int index, unsigned int len,
       mask >>= 1;
     }
 
-  /* bytes is in range [2..4] as c was in range [C2..F4] */
+  /* Bytes is in range [2..4] as c was in range [C2..F4].  */
   len -= index;
   if (bytes > len)
     return 1;
 
   value = c & (mask - 1);
 
-  /* Ok, do the bytes */
+  /* OK, do the bytes.  */
   line += index;
   for (i = 1; i < bytes; i++)
     {
@@ -66,7 +66,7 @@ utf8_to_unicode (const char *line, unsigned int index, unsigned int len,
       value = (value << 6) | (c & 0x3f);
     }
 
-  if (value > 0x10FFFF) /* Avoid 110000 - 13FFFF */
+  if (value > 0x10FFFF) /* Avoid [110000..13FFFF].  */
     return 1;
 
   *res = value;
@@ -92,19 +92,19 @@ unicode_to_utf8 (unicode_t c, char *utf8)
   assert (c <= 0x10FFFF);
 
 #ifdef NDEBUG
-  if (c > 0x10FFFF) /* Let's assume this is due to sign extension */
+  if (c > 0x10FFFF) /* Let's assume this is due to sign extension.  */
     c &= 0xFF;
 #endif
 
-  if (c <= 0x7f)
-    *utf8 = (char)c;
+  if (c <= 0x7F)
+    *utf8 = (char) c;
   else
     {
-      unsigned prefix = 0x40;
+      unsigned int prefix = 0x40;
       char *p = utf8;
       do
         {
-          *p++ = (char)(0x80 + (c & 0x3f));
+          *p++ = (char) (0x80 + (c & 0x3f));
           bytes++;
           prefix >>= 1;
           c >>= 6;
@@ -112,9 +112,10 @@ unicode_to_utf8 (unicode_t c, char *utf8)
       while (c >= prefix);
 
       *p-- = *utf8;
-      *utf8++ = (char)(c - 2 * prefix);
+      *utf8++ = (char) (c - 2 * prefix);
       if (utf8 < p)
-        { /* swap middle two bytes if 4 bytes utf-8 code */
+        {
+          /* Swap middle two bytes if 4 bytes UTF-8 code.  */
           char c = *p;
           *p = *utf8;
           *utf8 = c;
@@ -124,25 +125,25 @@ unicode_to_utf8 (unicode_t c, char *utf8)
   return bytes;
 }
 
-unsigned
-utf8_revdelta (unsigned char *p, unsigned pos)
+unsigned int
+utf8_revdelta (unsigned char *p, unsigned int pos)
 {
-  unsigned delta = 0;
+  unsigned int delta = 0;
 
   if ((*p & 0xC0) == 0x80)
     {
       unsigned char c;
 
       c = *--p;
-      if ((c & 0xE0) == 0xC0) /* valid 2 bytes unicode seq */
+      if ((c & 0xE0) == 0xC0) /* Valid 2 bytes unicode seq.  */
         delta = 1;
       else if (((c & 0xC0) == 0x80) && (pos > 1))
         {
           c = *--p;
-          if ((c & 0xF0) == 0xE0) /* valid 3 bytes unicode seq */
+          if ((c & 0xF0) == 0xE0) /* Valid 3 bytes unicode seq.  */
             delta = 2;
           else if (((c & 0xC0) == 0x80) && (pos > 2))
-            if ((p[-1] & 0xF8) == 0xF0) /* valid 4 bytes unicode seq */
+            if ((*(p - 1) & 0xF8) == 0xF0) /* Valid 4 bytes unicode seq.  */
               delta = 3;
         }
     }

@@ -1,21 +1,21 @@
 #ifndef __RETCODE_H__
 #define __RETCODE_H__
 
-#ifdef FALSE
-# error "FALSE should not be defined"
-# undef FALSE
+#ifdef FAILURE
+# error "FAILURE should not be defined"
+# undef FAILURE
 #endif
-#ifdef TRUE
-# error "TRUE should not be defined"
-# undef TRUE
+#ifdef SUCCESS
+# error "SUCCESS should not be defined"
+# undef SUCCESS
 #endif
 #ifdef ABORT
 # error "ABORT should not be defined"
 # undef ABORT
 #endif
 
-#define FALSE 0 /* 0, false, no, bad, etc.  */
-#define TRUE  1 /* 1, true, yes, good, etc.  */
-#define ABORT 2 /* 2, death, ^G, abort, etc.  */
+#define FAILURE 0 /* 0, false, no, bad, etc.  */
+#define SUCCESS 1 /* 1, true, yes, good, etc.  */
+#define ABORT   2 /* 2, death, ^G, abort, etc.  */
 
 #endif

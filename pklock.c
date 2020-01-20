@@ -3,9 +3,9 @@
 #include "estruct.h"
 #include "pklock.h"
 
-/*	PKLOCK.C
+/*  PKLOCK.C
  *
- *	locking routines as modified by Petri Kutvonen
+ *  locking routines as modified by Petri Kutvonen
  */
 
 #if (FILOCK && BSD) || SVR4
@@ -15,9 +15,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #ifdef SVR4
-#include <string.h>
+# include <string.h>
 #else
-#include <strings.h>
+# include <strings.h>
 #endif
 #include <errno.h>
 
@@ -28,7 +28,7 @@
 #define MAXNAME 128
 
 #if defined(SVR4) && !defined(__linux__)
-#include <sys/systeminfo.h>
+# include <sys/systeminfo.h>
 
 int
 gethostname (char *name, int namelen)
@@ -37,7 +37,26 @@ gethostname (char *name, int namelen)
 }
 #endif
 
-char *cuserid (char *retbuf); /* should have been declared in stdio.h */
+static void
+getlname (char *lname, const char *fname, size_t lsize)
+{
+  char *last_delim = strrchr (fname, '/');
+  if (last_delim++ != NULL)
+    {
+      size_t n = strscpy (lname, fname, last_delim - fname);
+      fname += n;
+      lsize -= n;
+      strscat (lname, ".em-", lsize);
+    }
+  else
+    strcpy (lname, ".em-");
+
+  lsize -= sizeof (".em-") - 1 + sizeof (".lock") - 1;
+  strscat (lname, fname, lsize);
+  strcat (lname, ".lock");
+}
+
+extern char *cuserid (char *retbuf); /* should have been declared in stdio.h */
 
 /**********************
  *
@@ -56,8 +75,7 @@ dolock (const char *fname)
   int mask;
   struct stat sbuf;
 
-  strlcpy (lname, fname, sizeof lname - 6);
-  strcat (lname, ".lock~");
+  getlname (lname, fname, sizeof (lname));
 
   /* check that we are not being cheated, qname must point to     */
   /* a regular file - even this code leaves a small window of     */
@@ -92,12 +110,11 @@ dolock (const char *fname)
     {
       lseek (fd, 0, SEEK_SET);
       /*
-      **	Since Ubuntu 17.04, cuserid prototype seems missing. Replacing it
-      *by
-      **  getlogin does the trick on 64 bits but fails on 32 bits.
+      **  Since Ubuntu 17.04, cuserid prototype seems missing. Replacing it
+      **  by getlogin does the trick on 64 bits but fails on 32 bits.
       **  So let's work around with cuserid for a while.
-      **		logname = getlogin() ;
-      **		strcpy( locker, logname ? logname : cuserid( NULL)) ;
+      **    logname = getlogin() ;
+      **    strcpy( locker, logname ? logname : cuserid( NULL)) ;
       */
       strcpy (locker, cuserid (NULL));
 
@@ -136,8 +153,7 @@ undolock (const char *fname)
 {
   char lname[MAXLOCK];
 
-  strlcpy (lname, fname, sizeof lname - 6);
-  strcat (lname, ".lock~");
+  getlname (lname, fname, sizeof (lname));
   if (unlink (lname) != 0)
     {
       if (errno == EACCES || errno == ENOENT)
@@ -152,7 +168,7 @@ undolock (const char *fname)
 }
 
 #else
-typedef void _pedantic_empty_translation_unit;
+typedef int dummy;
 #endif
 
 /* end of pklock.c */

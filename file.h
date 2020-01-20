@@ -4,20 +4,20 @@
 #include "buffer.h"
 #include "retcode.h"
 
-extern int restflag; /* restricted use?              */
-int resterr (void);  /* restricted error message		*/
+extern bool restflag; /* Restricted use?  */
+extern int resterr (void); /* Restricted error message.  */
 
-int fileread (int f, int n);
-int insfile (int f, int n);
-int filefind (int f, int n);
-int viewfile (int f, int n);
-int getfile (const char *fname, int lockfl);
-int readin (const char *fname, int lockfl);
-void makename (bname_t bname, const char *fname);
-void unqname (char *name);
-int filewrite (int f, int n);
-int filesave (int f, int n);
-int writeout (const char *fn);
-int filename (int f, int n);
+extern int fileread (bool f, int n);
+extern int insfile (bool f, int n);
+extern int filefind (bool f, int n);
+extern int viewfile (bool f, int n);
+extern int getfile (const char *fname, bool lockfl);
+extern int readin (const char *fname, bool lockfl);
+extern void makename (bname_t bname, const char *fname);
+extern void unqname (char *name);
+extern int filewrite (bool f, int n);
+extern int filesave (bool f, int n);
+extern int writeout (const char *fn);
+extern int filename (bool f, int n);
 
 #endif

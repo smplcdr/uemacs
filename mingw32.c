@@ -16,10 +16,13 @@
 static void
 vv (void)
 {
+  return;
 }
 static void
 vi (int i)
 {
+  (void) i;
+  return;
 }
 static int
 is (char *s)
@@ -31,13 +34,16 @@ static void ttmove (int l, int c);
 
 #define MARGIN 8
 #define SCRSIZ 64
-#define NPAUSE 10 /* # times thru update to pause. */
+#define NPAUSE 10 /* # times thru update to pause.  */
 
-struct terminal term = {
-  24, /* These four values are set dynamically at open time. */
+struct terminal term =
+{
+  /* These four values are set dynamically at open time.  */
+  24,
   24,
   80,
   80,
+
   MARGIN,
   SCRSIZ,
   NPAUSE,
@@ -59,13 +65,11 @@ struct terminal term = {
   vi, /* ttrev, */
   is  /* ttcres */
 #if COLOR
-  ,
-  iv, /* ttfcol, */
-  iv  /* ttbcol */
+  , iv /* ttfcol, */
+  , iv  /* ttbcol */
 #endif
 #if SCROLLCODE
-  ,
-  NULL /* set dynamically at open time */
+  , NULL /* set dynamically at open time */
 #endif
 };
 
@@ -77,7 +81,7 @@ int revexist = FALSE; /* does reverse video exist?    */
 int sgarbf = TRUE;    /* State of screen unknown      */
 
 char sres[16]; /* Current screen resolution.   */
-               /* NORMAL, CGA, EGA, VGA	*/
+               /* NORMAL, CGA, EGA, VGA */
 
 void
 ttopen (void)
@@ -92,16 +96,17 @@ ttopen (void)
 void
 ttclose (void)
 {
+  return;
 }
 
 int
 ttputc (unicode_t c)
 {
-  char utf8[6];
-  int bytes;
+  char utf8[4];
+  unsigned int bytes;
 
   bytes = unicode_to_utf8 (c, utf8);
-  fwrite (utf8, 1, bytes, stdout);
+  fwrite (utf8, sizeof (char), bytes, stdout);
   return 0;
 }
 
@@ -132,14 +137,14 @@ ttgetc (void)
   count = pending;
   if (!count)
     {
-      count = read (0, buffer, sizeof (buffer));
+      count = read (STDIN_FILENO, buffer, sizeof (buffer));
       if (count <= 0)
         return 0;
 
       pending = count;
     }
 
-  c = (unsigned char)buffer[0];
+  c = (unsigned char) buffer[0];
   if (c >= 32 && c < 128)
     goto done;
 
@@ -165,17 +170,17 @@ ttgetc (void)
     {
       int n;
 #if 0
-		ntermios.c_cc[VMIN] = 0;
-		ntermios.c_cc[VTIME] = 1;		/* A .1 second lag */
-		tcsetattr(0, TCSANOW, &ntermios);
+    ntermios.c_cc[VMIN] = 0;
+    ntermios.c_cc[VTIME] = 1;   /* A .1 second lag */
+    tcsetattr(0, TCSANOW, &ntermios);
 #endif
-      n = read (0, buffer + count, sizeof (buffer) - count);
+      n = read (STDIN_FILENO, buffer + count, sizeof (buffer) - count);
 
       /* Undo timeout */
 #if 0
-		ntermios.c_cc[VMIN] = 1;
-		ntermios.c_cc[VTIME] = 0;
-		tcsetattr(0, TCSANOW, &ntermios);
+    ntermios.c_cc[VMIN] = 1;
+    ntermios.c_cc[VTIME] = 0;
+    tcsetattr(0, TCSANOW, &ntermios);
 #endif
       if (n > 0)
         pending += n;
@@ -205,13 +210,14 @@ done:
 int
 typahead (void)
 {
-  int x; /* holds # of pending chars */
-
 #ifdef FIONREAD
+  int x; /* holds # of pending chars */
   if (ioctl (0, FIONREAD, &x) < 0)
-#endif
     x = 0;
   return x;
+#else
+  return 0;
+#endif
 }
 
 static void
@@ -221,7 +227,7 @@ ttmove (int l, int c)
 }
 
 #else
-typedef void _pedantic_empty_translation_unit;
+typedef int dummy;
 #endif
 
 /* end of mingw32.c */

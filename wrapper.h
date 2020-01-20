@@ -1,10 +1,9 @@
-#ifndef WRAPPER_H_
-#define WRAPPER_H_
+#ifndef _WRAPPER_H
+#define _WRAPPER_H 1
 
 #include <stdlib.h>
 
-void xmkstemp (char *fname_template);
-
+void xmkstemp (char *template);
 void *xmalloc (size_t size);
 
-#endif /* WRAPPER_H_ */
+#endif /* _WRAPPER_H */

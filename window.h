@@ -1,8 +1,10 @@
-#ifndef _WINDOW_H_
-#define _WINDOW_H_
+#ifndef _WINDOW_H
+#define _WINDOW_H 1
 
+#include "defines.h"
+
+#include "estruct.h"
 #include "buffer.h"  /* buffer, line */
-#include "defines.h" /* COLOR, SCROLLCODE */
 
 /*
  * There is a window structure allocated for every active display window. The
@@ -13,63 +15,65 @@
  * the full blown redisplay is just too expensive to run for every input
  * character.
  */
-typedef struct window
+typedef struct window *window_p;
+struct window
 {
-  struct window *w_wndp; /* Next window                  */
-  struct buffer *w_bufp; /* Buffer displayed in window   */
-  line_p w_linep;        /* Top line in the window       */
-  line_p w_dotp;         /* Line containing "."          */
-  line_p w_markp;        /* Line containing "mark"       */
-  int w_doto;            /* Byte offset for "."          */
-  int w_marko;           /* Byte offset for "mark"       */
-  int w_toprow;          /* Origin 0 top row of window   */
-  int w_ntrows;          /* # of rows of text in window  */
-  char w_force;          /* If NZ, forcing row.          */
-  char w_flag;           /* Flags.                       */
+  window_p w_wndp;        /* Next window.  */
+  buffer_p w_bufp;        /* Buffer displayed in window.  */
+  line_p w_linep;         /* Top line in the window.  */
+  line_p w_dotp;          /* Line containing ".".  */
+  line_p w_markp;         /* Line containing "mark".  */
+  int w_doto;             /* Byte offset for ".".  */
+  int w_marko;            /* Byte offset for "mark".  */
+  int w_toprow;           /* Origin 0 top row of window.  */
+  int w_ntrows;           /* # of rows of text in window.  */
+  unsigned int w_force:1; /* If NZ, forcing row.  */
+  unsigned char w_flag;   /* Flags.  */
 #if COLOR
-  char w_fcolor; /* current forground color      */
-  char w_bcolor; /* current background color     */
+  char w_fcolor;          /* Current forground color.  */
+  char w_bcolor;          /* Current background color.  */
 #endif
-} * window_p;
+};
 
-extern window_p curwp;  /* Current window               */
-extern window_p wheadp; /* Head of list of windows      */
+extern window_p curwp;  /* Current window.  */
+extern window_p wheadp; /* Head of list of windows.  */
 
-/* curwbyte return the byte after the dot in current window */
+/* curwbyte() return the byte after the dot in current window.  */
 #define curwbyte() lgetc (curwp->w_dotp, curwp->w_doto)
 
-#define WFFORCE 0x01 /* Window needs forced reframe  */
-#define WFMOVE 0x02  /* Movement from line to line   */
-#define WFEDIT 0x04  /* Editing within a line        */
-#define WFHARD 0x08  /* Better to a full display     */
-#define WFMODE 0x10  /* Update mode line.            */
-#define WFCOLR 0x20  /* Needs a color change         */
+#define WFFORCE (1 << 0) /* Window needs forced reframe.  */
+#define WFMOVE  (1 << 1) /* Movement from line to line.  */
+#define WFEDIT  (1 << 2) /* Editing within a line.  */
+#define WFHARD  (1 << 3) /* Better to a full display.  */
+#define WFMODE  (1 << 4) /* Update mode line.  */
+#define WFCOLR  (1 << 5) /* Needs a color change.  */
 
 #if SCROLLCODE
-#define WFKILLS 0x40 /* something was deleted        */
-#define WFINS 0x80   /* something was inserted       */
+# define WFKILLS (1 << 6) /* Something was deleted.  */
+# define WFINS   (1 << 7) /* Something was inserted.  */
 #endif
 
-int reposition (int f, int n);
-int redraw (int f, int n);
-int nextwind (int f, int n);
-int prevwind (int f, int n);
-int mvdnwind (int f, int n);
-int mvupwind (int f, int n);
-int onlywind (int f, int n);
-int delwind (int f, int n);
-int splitwind (int f, int n);
-int enlargewind (int f, int n);
-int shrinkwind (int f, int n);
-int resize (int f, int n);
-int scrnextup (int f, int n);
-int scrnextdw (int f, int n);
-int savewnd (int f, int n);
-int restwnd (int f, int n);
-int newsize (int f, int n);
-int newwidth (int f, int n);
-int getwpos (void);
-void cknewwindow (void);
-window_p wpopup (void); /* Pop up window creation. */
+extern int reposition (bool f, int n);
+extern int redraw (bool f, int n);
+extern int nextwind (bool f, int n);
+extern int prevwind (bool f, int n);
+extern int mvdnwind (bool f, int n);
+extern int mvupwind (bool f, int n);
+extern int onlywind (bool f, int n);
+extern int delwind (bool f, int n);
+extern int splitwind (bool f, int n);
+extern int enlargewind (bool f, int n);
+extern int shrinkwind (bool f, int n);
+extern int resize (bool f, int n);
+extern int scrnextup (bool f, int n);
+extern int scrnextdw (bool f, int n);
+extern int savewnd (bool f, int n);
+extern int restwnd (bool f, int n);
+extern int newsize (bool f, int n);
+extern int newwidth (bool f, int n);
 
-#endif
+extern int getwpos (void);
+extern void cknewwindow (void);
+extern window_p wpopup (void); /* Pop up window creation.  */
+
+#endif /* _WINDOW_H */

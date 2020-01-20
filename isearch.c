@@ -1,6 +1,6 @@
 #include "isearch.h"
 
-/*	isearch.c
+/*  isearch.c
  *
  * The functions in this file implement commands that perform incremental
  * searches in the forward and backward directions.  This "ISearch" command
@@ -10,18 +10,18 @@
  *
  * REVISION HISTORY:
  *
- *	D. R. Banks 9-May-86
- *	- added ITS EMACSlike ISearch
+ *  D. R. Banks 9-May-86
+ *  - added ITS EMACSlike ISearch
  *
- *	John M. Gamble 5-Oct-86
- *	- Made iterative search use search.c's scanner() routine.
- *	  This allowed the elimination of bakscan().
- *	- Put isearch constants into estruct.h
- *	- Eliminated the passing of 'status' to scanmore() and
- *	  checknext(), since there were no circumstances where
- *	  it ever equalled FALSE.
+ *  John M. Gamble 5-Oct-86
+ *  - Made iterative search use search.c's scanner() routine.
+ *    This allowed the elimination of bakscan().
+ *  - Put isearch constants into estruct.h
+ *  - Eliminated the passing of 'status' to scanmore() and
+ *    checknext(), since there were no circumstances where
+ *    it ever equalled FALSE.
  *
- *	Modified by Petri Kutvonen
+ *  Modified by Petri Kutvonen
  */
 
 #include <stdio.h>
@@ -39,30 +39,25 @@
 #include "util.h"
 #include "window.h"
 
-/*
- * Incremental search defines.
- */
+/* Incremental search defines.  */
 #if ISRCH
+# define CMDBUFLEN 256 /* Length of our command buffer */
 
-#define CMDBUFLEN 256 /* Length of our command buffer */
-
-#define IS_ABORT 0x07    /* Abort the isearch */
-#define IS_BACKSP 0x08   /* Delete previous char */
-#define IS_TAB 0x09      /* Tab character (allowed search char) */
-#define IS_NEWLINE 0x0D  /* New line from keyboard (Carriage return) */
-#define IS_QUOTE 0x11    /* Quote next character */
-#define IS_REVERSE 0x12  /* Search backward */
-#define IS_FORWARD 0x13  /* Search forward */
-#define IS_VMSQUOTE 0x16 /* VMS quote character */
-#define IS_VMSFORW 0x18  /* Search forward for VMS */
-#define IS_QUIT 0x1B     /* Exit the search */
-#define IS_RUBOUT 0x7F   /* Delete previous character */
-
+# define IS_ABORT    0x07 /* Abort the isearch */
+# define IS_BACKSP   0x08 /* Delete previous char */
+# define IS_TAB      0x09 /* Tab character (allowed search char) */
+# define IS_NEWLINE  0x0D /* New line from keyboard (Carriage return) */
+# define IS_QUOTE    0x11 /* Quote next character */
+# define IS_REVERSE  0x12 /* Search backward */
+# define IS_FORWARD  0x13 /* Search forward */
+# define IS_VMSQUOTE 0x16 /* VMS quote character */
+# define IS_VMSFORW  0x18 /* Search forward for VMS */
+# define IS_QUIT     0x1B /* Exit the search */
+# define IS_RUBOUT   0x7F /* Delete previous character */
 /* IS_QUIT is no longer used, the variable metac is used instead */
-
 #endif
 
-static int isearch (int f, int n);
+static int isearch (bool f, int n);
 static int checknext (char chr, char *patrn, int dir);
 static int scanmore (char *patrn, int dir);
 static int match_pat (char *patrn);
@@ -72,11 +67,9 @@ static int uneat (void);
 static void reeat (int c);
 
 #if ISRCH
-
 static int echo_char (int c, int col);
 
 /* A couple of "own" variables for re-eat */
-
 static int (*saved_get_char) (void); /* Get character routine */
 static int eaten_char = -1;          /* Re-eaten char */
 
@@ -91,36 +84,36 @@ static int cmd_reexecute = -1;  /* > 0 if re-executing command */
  * same code as the normal incremental search, as both can go both ways.
  */
 int
-risearch (int f, int n)
+risearch (bool f, int n)
 {
-  struct line *curline; /* Current line on entry              */
-  int curoff;           /* Current offset on entry            */
+  line_p curline; /* Current line on entry.  */
+  int curoff; /* Current offset on entry.  */
 
-  /* remember the initial . on entry: */
+  /* Remember the initial . on entry: */
+  curline = curwp->w_dotp; /* Save the current line pointer.  */
+  curoff = curwp->w_doto;  /* Save the current offset.  */
 
-  curline = curwp->w_dotp; /* Save the current line pointer      */
-  curoff = curwp->w_doto;  /* Save the current offset            */
+  /* Make sure the search does not match where we already are: */
+  backchar (TRUE, 1); /* Back up a character.  */
 
-  /* Make sure the search doesn't match where we already are:               */
-
-  backchar (TRUE, 1); /* Back up a character                */
-
-  if (!(isearch (f, -n)))
-    { /* Call ISearch backwards       */ /* If error in search: */
-      curwp->w_dotp = curline;     /* Reset the line pointer             */
-      curwp->w_doto = curoff;      /*  and the offset to original value  */
+   /* Call ISearch backwards.  */
+  if (isearch (f, -n) == FAILURE)
+    {
+      /* If error in search: */
+      curwp->w_dotp = curline; /* Reset the line pointer             */
+      curwp->w_doto = curoff; /*  and the offset to original value  */
       curwp->w_flag |= WFMOVE;     /* Say we've moved                    */
       update (FALSE);              /* And force an update                */
       mlwrite ("(search failed)"); /* Say we died                        */
-#if PKCODE
+# if PKCODE
       matchlen = strlen (pat);
-#endif
+# endif
     }
   else
     mlerase (); /* If happy, just erase the cmd line  */
-#if PKCODE
+# if PKCODE
   matchlen = strlen (pat);
-#endif
+# endif
   return TRUE;
 }
 
@@ -128,9 +121,9 @@ risearch (int f, int n)
  * Again, but for the forward direction
  */
 int
-fisearch (int f, int n)
+fisearch (bool f, int n)
 {
-  struct line *curline; /* Current line on entry              */
+  line_p curline; /* Current line on entry              */
   int curoff;           /* Current offset on entry            */
 
   /* remember the initial . on entry: */
@@ -140,7 +133,7 @@ fisearch (int f, int n)
 
   /* do the search */
 
-  if (!(isearch (f, n)))
+  if (isearch (f, n) == FALSE)
     { /* Call ISearch forwards        */ /* If error in search: */
       curwp->w_dotp = curline;     /* Reset the line pointer             */
       curwp->w_doto = curoff;      /*  and the offset to original value  */
@@ -184,36 +177,33 @@ fisearch (int f, int n)
  * will stall until the pattern string is edited back into something that
  * exists (or until the search is aborted).
  */
-
 static int
-isearch (int f, int n)
+isearch (bool f, int n)
 {
-  int status;           /* Search status */
-  int col;              /* prompt column */
-  unsigned cpos;        /* character number in search string  */
-  int c;                /* current input character */
-  int expc;             /* function expanded input char       */
-  spat_t pat_save;      /* Saved copy of the old pattern str  */
-  struct line *curline; /* Current line on entry              */
-  int curoff;           /* Current offset on entry            */
-  int init_direction;   /* The initial search direction       */
+  int status;         /* Search status.  */
+  int col;            /* Prompt column.  */
+  unsigned int cpos;  /* Character number in search string.  */
+  int c;              /* Current input character.  */
+  int expc;           /* Function expanded input char.  */
+  spat_t pat_save;    /* Saved copy of the old pattern str.  */
+  line_p curline;     /* Current line on entry.  */
+  int curoff;         /* Current offset on entry.  */
+  int init_direction; /* The initial search direction.  */
 
-  /* Initialize starting conditions */
-
-  cmd_reexecute = -1; /* We're not re-executing (yet?)      */
-  cmd_offset = 0;     /* Start at the beginning of the buff */
-  cmd_buff[0] = '\0'; /* Init the command buffer            */
-  strlcpy (pat_save, pat, sizeof pat_save); /* Save the old pattern string */
-  curline = curwp->w_dotp; /* Save the current line pointer      */
-  curoff = curwp->w_doto;  /* Save the current offset            */
-  init_direction = n;      /* Save the initial search direction  */
+  /* Initialize starting conditions.  */
+  cmd_reexecute = -1; /* We are not re-executing (yet?).  */
+  cmd_offset = 0; /* Start at the beginning of the buff.  */
+  cmd_buff[0] = '\0'; /* Init the command buffer.  */
+  strscpy (pat_save, pat, sizeof pat_save); /* Save the old pattern string.  */
+  curline = curwp->w_dotp; /* Save the current line pointer.  */
+  curoff = curwp->w_doto; /* Save the current offset.  */
+  init_direction = n; /* Save the initial search direction.  */
 
   /* This is a good place to start a re-execution: */
 
 start_over:
-
   /* ask the user for the text of a pattern */
-  col = promptpattern ("ISearch"); /* Prompt, remember the col   */
+  col = promptpattern ("I-search"); /* Prompt, remember the col   */
 
   cpos = 0;      /* Start afresh               */
   status = TRUE; /* Assume everything's cool   */
@@ -286,7 +276,7 @@ start_over:
           curwp->w_dotp = curline;       /* Reset the line pointer     */
           curwp->w_doto = curoff;        /*  and the offset            */
           n = init_direction;            /* Reset the search direction */
-          strlcpy (pat, pat_save, sizeof pat); /* Restore the old search str */
+          strscpy (pat, pat_save, sizeof pat); /* Restore the old search str */
           cmd_reexecute = 0;                   /* Start the whole mess over  */
           goto start_over;                     /* Let it take care of itself */
 
@@ -316,10 +306,8 @@ start_over:
           TTbeep ();  /* Feep again                 */
           TTflush (); /* see that the feep feeps    */
         }
-      else /* Otherwise, we must have won */ if (!(status = checknext (
-                                                       c,
-                                                       pat, n))) /* See if
-                                                                    match */
+      /* Otherwise, we must have won */
+      else if ((status = checknext (c, pat, n)) == FALSE) /* See if match */
         status = scanmore (pat, n);   /*  or find the next match    */
       c = ectoc (expc = get_char ()); /* Get the next char          */
     }                                 /* for {;;} */
@@ -335,15 +323,14 @@ start_over:
  * If the compare fails, we return FALSE and assume the caller will call
  * scanmore or something.
  *
- * char chr;		Next char to look for
- * char *patrn;		The entire search string (incl chr)
- * int dir;		Search direction
+ * char chr;    Next char to look for
+ * char *patrn;   The entire search string (incl chr)
+ * int dir;   Search direction
  */
 static int
-checknext (char chr, char *patrn,
-           int dir) /* Check next character in search string */
+checknext (char chr, char *patrn, int dir) /* Check next character in search string */
 {
-  struct line *curline; /* current line during scan           */
+  line_p curline; /* current line during scan           */
   int curoff;           /* position within current line       */
   int buffchar;         /* character at current position      */
   int status;           /* how well things go                 */
@@ -386,8 +373,8 @@ checknext (char chr, char *patrn,
  * forward searches and at the beginning of the matched string for reverse
  * searches.
  *
- * char *patrn;			string to scan for
- * int dir;			direction to search
+ * char *patrn;     string to scan for
+ * int dir;     direction to search
  */
 static int
 scanmore (char *patrn, int dir) /* search forward or back for a pattern */
@@ -420,14 +407,14 @@ scanmore (char *patrn, int dir) /* search forward or back for a pattern */
  * at the end of the search string (instead of in front), so all that needs to
  * be done is match the last char input.
  *
- * char *patrn;			String to match to buffer
+ * char *patrn;     String to match to buffer
  */
 static int
 match_pat (char *patrn) /* See if the pattern string matches string at "."   */
 {
   unsigned i;           /* Generic loop index/offset          */
   int buffchar;         /* character at current position      */
-  struct line *curline; /* current line during scan           */
+  line_p curline; /* current line during scan           */
   int curoff;           /* position within current line       */
 
   /* setup the local scan pointer to current "." */
@@ -476,8 +463,8 @@ promptpattern (char *prompt)
 /*
  * routine to echo i-search characters
  *
- * int c;		character to be echoed
- * int col;		column to be echoed in
+ * int c;   character to be echoed
+ * int col;   column to be echoed in
  */
 static int
 echo_char (int c, int col)
@@ -583,7 +570,7 @@ reeat (int c)
 }
 #else
 int
-isearch (int f, int n)
+isearch (bool f, int n)
 {
 }
 #endif

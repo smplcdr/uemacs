@@ -1,7 +1,9 @@
 /* bindable.h -- implements bindable.c */
 #include "bindable.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "buffer.h"
 #include "defines.h"
@@ -18,10 +20,10 @@
  * changed do a write on that buffer and exit emacs, otherwise simply exit.
  */
 int
-quickexit (int f, int n)
+quickexit (bool f, int n)
 {
-  struct buffer *bp;    /* scanning pointer to buffers */
-  struct buffer *oldcb; /* original current buffer */
+  buffer_p bp;    /* scanning pointer to buffers */
+  buffer_p oldcb; /* original current buffer */
   int status;
 
   oldcb = curbp; /* save in case we fail */
@@ -32,14 +34,13 @@ quickexit (int f, int n)
       if ((bp->b_flag & BFCHG) != 0      /* Changed.             */
           && (bp->b_flag & BFTRUNC) == 0 /* Not truncated P.K.   */
           && (bp->b_flag & BFINVS) == 0)
-        {             /* Real.                */
-          curbp = bp; /* make that buffer cur */
+        { /* Real.  */
+          curbp = bp; /* Make that buffer current.  */
           mloutfmt ("(Saving %s)", bp->b_fname);
-#if PKCODE
-#else
+#if !PKCODE
           mloutstr ("\n");
 #endif
-          if ((status = filesave (f, n)) != TRUE)
+          if ((status = filesave (f, n)) != SUCCESS)
             {
               curbp = oldcb; /* restore curbp */
               return status;
@@ -48,6 +49,49 @@ quickexit (int f, int n)
       bp = bp->b_bufp; /* on to the next buffer */
     }
   quit (f, n); /* conditionally quit   */
+  return SUCCESS;
+}
+
+static int
+savebuffersonexit (bool f, int n)
+{
+  int c; /* Input character.  */
+  buffer_p oldcb;
+
+  oldcb = curbp;
+  for (curbp = bheadp; curbp != NULL; curbp = curbp->b_bufp)
+    {
+      if (curbp != bscratchp && (curbp->b_flag & BFINVS) == 0 && (curbp->b_flag & BFCHG) != 0)
+        {
+        lagain:
+          /* Prompt the user.  */
+          mlwrite ("Save file %s? (y, n, .) ", curbp->b_fname);
+
+          /* Get the response.  */
+          c = get1key ();
+
+          if (c == abortc)
+            return ABORT;
+          switch (c)
+            {
+            case 'Y':
+            case 'y':
+              filesave (f, n);
+              break;
+            case 'N':
+            case 'n':
+              return FAILURE;
+            case '.':
+              filesave (f, n);
+              return SUCCESS;
+            default:
+              mlwrite ("Please, type 'y', 'n' or '.'");
+              sleep (1);
+              goto lagain;
+            }
+        }
+    }
+  curbp = oldcb;
   return TRUE;
 }
 
@@ -56,14 +100,15 @@ quickexit (int f, int n)
  * has been changed and not written out. Normally bound to "C-X C-C".
  */
 int
-quit (int f, int n)
+quit (bool f, int n)
 {
-  int s;
+  int s = FALSE;
 
-  if (f != FALSE           /* Argument forces it.  */
-      || anycb () == FALSE /* All buffers clean.   */
-      /* User says it's OK.   */
-      || (s = mlyesno ("Modified buffers exist. Leave anyway")) == TRUE)
+  if (f /* Argument forces it.  */
+      || (s = savebuffersonexit (f, n)) == SUCCESS
+      || anycb () == FAILURE /* All buffers clean.  */
+      /* User says it's OK.  */
+      || (s = mlyesno ("Modified buffers exist.  Leave anyway?")) == SUCCESS)
     {
 #if (FILOCK && BSD) || SVR4
       if (lockrel () != TRUE)
@@ -91,7 +136,7 @@ quit (int f, int n)
  * return.
  */
 int
-ctlxlp (int f, int n)
+ctlxlp (bool f, int n)
 {
   if (kbdmode != STOP)
     {
@@ -110,7 +155,7 @@ ctlxlp (int f, int n)
  * routine. Set up the variables and return to the caller.
  */
 int
-ctlxrp (int f, int n)
+ctlxrp (bool f, int n)
 {
   if (kbdmode == STOP)
     {
@@ -131,7 +176,7 @@ ctlxrp (int f, int n)
  * command gets an error. Return TRUE if all ok, else FALSE.
  */
 int
-ctlxe (int f, int n)
+ctlxe (bool f, int n)
 {
   if (kbdmode != STOP)
     {
@@ -152,37 +197,37 @@ ctlxe (int f, int n)
  * Sometimes called as a routine, to do general aborting of stuff.
  */
 int
-ctrlg (int f, int n)
+ctrlg (bool f, int n)
 {
   kbdmode = STOP;
   mloutfmt ("%B(Aborted)");
   return ABORT;
 }
 
-/* user function that does NOTHING */
+/* User function that does NOTHING.  */
 int
-nullproc (int f, int n)
+nullproc (bool f, int n)
 {
   return TRUE;
 }
 
-/* dummy function for binding to meta prefix */
+/* Dummy function for binding to meta prefix.  */
 int
-metafn (int f, int n)
+metafn (bool f, int n)
 {
   return TRUE;
 }
 
-/* dummy function for binding to control-x prefix */
+/* Dummy function for binding to C-x prefix.  */
 int
-cex (int f, int n)
+cex (bool f, int n)
 {
   return TRUE;
 }
 
-/* dummy function for binding to universal-argument */
+/* Dummy function for binding to universal-argument.  */
 int
-unarg (int f, int n)
+unarg (bool f, int n)
 {
   return TRUE;
 }

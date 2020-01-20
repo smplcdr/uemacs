@@ -30,7 +30,7 @@ inspound (int n)
       int i;
 
       /* scan to see if all space before this is white space */
-      for (i = curwp->w_doto - 1; i >= 0; i -= 1)
+      for (i = curwp->w_doto - 1; i >= 0; i--)
         {
           int ch; /* last character before input */
 
@@ -52,17 +52,18 @@ inspound (int n)
 /*
  * insert a brace into the text here...we are in CMODE
  *
- * int n;	repeat count
- * int c;	brace to insert (if not }, just normal insertion).
+ * int n; repeat count
+ * int c; brace to insert (if not }, just normal insertion).
  */
 static int
 insbrace (int n, int c)
 {
   int ch; /* last character before input */
   int oc; /* caractere oppose a c */
-  int i, count;
+  int i;
+  int count;
   int target; /* column brace should go after */
-  struct line *oldlp;
+  line_p oldlp;
   int oldoff;
 
   /* if not called with {, acts as insertion */
@@ -72,7 +73,7 @@ insbrace (int n, int c)
     return linsert (n, c);
 
   /* scan to see if all preceding spaces are white spaces, if not, insert */
-  for (i = curwp->w_doto - 1; i >= 0; --i)
+  for (i = curwp->w_doto - 1; i >= 0; i--)
     {
       ch = lgetc (curwp->w_dotp, i);
       if (ch != ' ' && ch != '\t')
@@ -100,9 +101,9 @@ insbrace (int n, int c)
         {
           ch = lgetc (curwp->w_dotp, curwp->w_doto);
           if (ch == c)
-            ++count;
+            count++;
           else if (ch == oc)
-            --count;
+            count--;
         }
     }
   while (count > 0);
@@ -140,14 +141,14 @@ insbrace (int n, int c)
  * Close fences are matched against their partners, and if
  * on screen the cursor briefly lights there
  *
- * char ch;			fence type to match against
+ * char ch;     fence type to match against
  */
 static void
 fmatch (int ch)
 {
-  struct line *oldlp; /* original line pointer */
+  line_p oldlp; /* original line pointer */
   int oldoff;         /* and offset */
-  struct line *toplp; /* top line in current window */
+  line_p toplp; /* top line in current window */
   int count;          /* current fence level count */
   int opench;         /* open fence */
 
@@ -226,7 +227,7 @@ fmatch (int ch)
  * look at it. Return the status of command.
  */
 int
-execute (int c, int f, int n)
+execute (int c, bool f, int n)
 {
   int status;
   fn_t execfunc;
@@ -267,8 +268,7 @@ execute (int c, int f, int n)
   if (c == ' ' && (curwp->w_bufp->b_mode & MDWRAP) && fillcol > 0
       && getccol (FALSE) > fillcol)
     {
-      status
-          = execute (META | SPEC | 'W', FALSE, 1); /* defaults to wrapword */
+      status = execute (META | SPEC | 'W', FALSE, 1); /* defaults to wrapword */
       if (status != TRUE)
         {
           lastflag = 0;
@@ -278,11 +278,10 @@ execute (int c, int f, int n)
 
   thisflag = 0; /* For the future.      */
 
-  /* following handling of overwrite is only valid when n == 1 */
-  /* if we are in overwrite mode, not at eol,
+  /* Following handling of overwrite is only valid when n == 1 */
+  /* If we are in overwrite mode, not at eol,
      and next char is not a tab or we are at a tab stop,
-     delete a char forward
-   */
+     delete a char forward.  */
   if (curbp->b_mode & MDOVER && curwp->w_doto < curwp->w_dotp->l_used
       && (lgetc (curwp->w_dotp, curwp->w_doto) != '\t'
           || ((curwp->w_doto) % tabwidth) == (tabwidth - 1)))
@@ -317,7 +316,7 @@ execute (int c, int f, int n)
   /* perform auto-save */
   if (status == TRUE               /* successful insertion */
       && (curbp->b_mode & MDASAVE) /* auto save is on */
-      && (--gacount == 0))
+      && --gacount == 0)
     { /* insertion count reached */
       /* and save the file if needed */
       upscreen (FALSE, 0);
@@ -337,7 +336,7 @@ kbd_loop (void)
   /* Setup to process commands. */
   lastflag = 0; /* Fake last flags. */
 
-  for (;;)
+  while (TRUE)
     {
       int saveflag; /* temp store for lastflag */
       int basec;    /* c stripped of meta character */
@@ -402,7 +401,7 @@ kbd_loop (void)
                  && (((basec = c & ~META) >= '0' && basec <= '9')
                      || basec == '-')))
         {
-          int mflag = 0; /* minus flag, default to positive */
+          bool mflag = FALSE; /* minus flag, default to positive */
 
           f = TRUE;
           if (c == reptc)
@@ -425,7 +424,7 @@ kbd_loop (void)
                 }
             }
 
-          mloutfmt ("Arg: %s%d", mflag ? "-" : "", n);
+          mloutfmt ("Arg: %s%d", mflag ? "?" : "", n);
           while (((c = getcmd ()) >= '0' && c <= '9') || c == '-')
             {
               if (c == '-')
@@ -450,14 +449,14 @@ kbd_loop (void)
                     n = n * 10 + c - '0';
                 }
 
-              mloutfmt ("Arg: %s%d", mflag ? "-" : "", n);
+              mloutfmt ("Arg: %s%d", mflag ? "?" : "", n);
             }
 
           if (mflag)
             n = -n;
         }
 
-      /* and execute the command */
+      /* Execute the command.  */
       execute (c, f, n);
     }
 }

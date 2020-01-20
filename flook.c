@@ -4,43 +4,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "defines.h"
 #include "fileio.h"
+#include "retcode.h"
 
-/*	possible names and paths of help files under different OSs	*/
-const char *pathname[] = {
+/* Possible names and paths of help files under different OSs.  */
+const char *pathname[] =
+{
 #if BSD | USG
-  ".emacsrc",         "emacs.hlp",
-#if PKCODE
-  "/usr/global/lib/", "/usr/local/bin/", "/usr/local/lib/",
-#endif
-  "/usr/local/",      "/usr/lib/",       ""
+  ".emrc",
+  "emacs.hlp",
+# if PKCODE
+  "/usr/global/lib/",
+  "/usr/local/bin/",
+  "/usr/local/lib/",
+# endif
+  "/usr/local/",
+  "/usr/lib/",
+  ""
 #endif
 };
 
-#define PATHNAME_SIZE (sizeof pathname / sizeof pathname[0])
+#define PATHNAME_SIZE (sizeof (pathname) / sizeof pathname[0])
 
 /*
  * does <fname> exist on disk?
  *
  * char *fname;     file to check for existance
  */
-int
+bool
 fexist (const char *fname)
 {
+#if 0
   FILE *fp;
 
-  /* try to open the file for reading */
+  /* Try to open the file for reading.  */
   fp = fopen (fname, "r");
 
-  /* if it fails, just return false! */
+  /* If it fails, just return false! */
   if (fp == NULL)
-    return FALSE;
+    return FAILURE;
 
-  /* otherwise, close it and report true */
+  /* Otherwise, close it and report true.  */
   fclose (fp);
-  return TRUE;
+  return SUCCESS;
+#endif
+  struct stat st;
+  return (stat (fname, &st) == 0 ? TRUE : FALSE);
 }
 
 /*
@@ -48,21 +60,21 @@ fexist (const char *fname)
  * environment variable. Look first in the HOME directory if
  * asked and possible
  *
- * char *fname;		base file name to search for
- * int hflag;		Look in the HOME environment variable first?
+ * char *fname;   base file name to search for
+ * int hflag;   Look in the HOME environment variable first?
  */
 char *
 flook (const char *fname, int hflag)
 {
   unsigned i; /* index */
-  int len;
+  ssize_t len;
   static char fspec[NSTRING]; /* full path spec to search */
 
 #if ENVFUNC
   char *path; /* environmental PATH variable */
 #endif
 
-  len = sizeof fspec - strlen (fname) - 1;
+  len = sizeof (fspec) - strlen (fname) - 1;
   if (len < 0)
     return NULL;
 
@@ -74,14 +86,15 @@ flook (const char *fname, int hflag)
       home = getenv ("HOME");
       if (home != NULL)
         {
-          if (len > (int)strlen (home) + 1)
+          size_t home_len = strlen (home);
+          if (len > home_len + 1)
             {
-              /* build home dir file spec */
+              /* Build home dir file spec.  */
               strcpy (fspec, home);
-              strcat (fspec, "/");
-              strcat (fspec, fname);
+              fspec[home_len] = '/';
+              strcpy (&fspec[home_len + 1], fname);
 
-              /* and try it out */
+              /* Try it out.  */
               if (fexist (fspec))
                 return fspec;
             }
@@ -115,12 +128,11 @@ flook (const char *fname, int hflag)
         cnt = len;
         /* build next possible file spec */
         sp = fspec;
-        while (*path && (*path != PATHCHR))
+        while (*path != '\0' && (*path != PATHCHR))
           {
             if (cnt-- > 0)
               *sp++ = *path;
-
-            path += 1;
+            path++;
           }
 
         if (cnt >= 0)
@@ -128,7 +140,7 @@ flook (const char *fname, int hflag)
             /* add a terminating dir separator if we need it */
             if (sp != fspec)
               *sp++ = '/';
-            *sp = 0;
+            *sp = '\0';
             strcat (fspec, fname);
 
             /* and try it out */
@@ -137,13 +149,13 @@ flook (const char *fname, int hflag)
           }
 
         if (*path == PATHCHR)
-          ++path;
+          path++;
       }
 #endif
 
   /* look it up via the old table method */
   for (i = 2; i < PATHNAME_SIZE; i++)
-    if (len >= (int)strlen (pathname[i]))
+    if (len >= strlen (pathname[i]))
       {
         strcpy (fspec, pathname[i]);
         strcat (fspec, fname);

@@ -18,6 +18,7 @@ else
 endif
 export E Q
 
+libpthread := $(shell sh -c 'getconf _POSIX_THREADS 2>/dev/null || echo not')
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 # for windows based target, insure we strip the variant part
 # CYGWIN_NT-6.1, CYGWIN_NT-6.1-WOW, CYGWIN_NT-6.1-WOW64, MINGW32_NT-6.1
@@ -27,7 +28,11 @@ PROGRAM=em
 
 CC=gcc -std=gnu89 -march=native
 WARNINGS=-pedantic -Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-function -Wno-implicit-fallthrough
-CFLAGS=-O2 -g $(WARNINGS)
+CFLAGS=-O2 -g $(WARNINGS) -ggdb
+ifneq ($(libpthread),not)
+ DEFINES=-DPTHREAD
+ LIBS=-lpthread
+endif
 #CC=c89 +O3			# HP
 #CFLAGS= -D_HPUX_SOURCE -DSYSV
 #CFLAGS=-O4 -DSVR4		# Sun
@@ -38,6 +43,10 @@ ifeq ($(uname_S),Linux)
 endif
 ifeq ($(uname_S),FreeBSD)
  DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_FREEBSD_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
+ LIBS=-ltermcap
+endif
+ifeq ($(uname_S),OpenBSD)
+ DEFINES=-DAUTOCONF -DPOSIX -DSYSV -D_OPENBSD_C_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -D_XOPEN_SOURCE=600
  LIBS=-ltermcap
 endif
 ifeq ($(uname_S),Darwin)
@@ -75,16 +84,16 @@ clean:
 	$(E) "  CLEAN"
 	$(Q) rm -f $(PROGRAM) core lintout makeout tags Makefile.bak *.o
 
-install: $(PROGRAM) emacs.hlp emacs.rc
+install: $(PROGRAM) emacs.hlp em.rc
 	strip $(PROGRAM)
 	cp $(PROGRAM) ${BINDIR}
 	cp emacs.hlp ${LIBDIR}
-	cp emacs.rc ${LIBDIR}/.emacsrc
+	cp em.rc ${LIBDIR}/.emrc
 	chmod 755 ${BINDIR}/$(PROGRAM)
-	chmod 644 ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
+	chmod 644 ${LIBDIR}/emacs.hlp ${LIBDIR}/.emrc
 
-uninstall: ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
-	rm -f ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emacsrc
+uninstall: ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emrc
+	rm -f ${BINDIR}/$(PROGRAM) ${LIBDIR}/emacs.hlp ${LIBDIR}/.emrc
 
 lint:	${SRC}
 	@rm -f lintout

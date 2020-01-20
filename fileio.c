@@ -35,9 +35,11 @@ ffropen (const char *fn)
 {
   if ((ffp = fopen (fn, "r")) == NULL)
     return FIOFNF;
+
   eofflag = FALSE;
   ftype = FTYPE_NONE;
   fcode = FCODE_ASCII;
+
   return FIOSUC;
 }
 
@@ -48,8 +50,7 @@ ffropen (const char *fn)
 fio_code
 ffwopen (const char *fn)
 {
-  ffp = fopen (fn, "w");
-  return (ffp == NULL) ? FIOERR : FIOSUC;
+  return (ffp = fopen (fn, "w")) == NULL ? FIOERR : FIOSUC;
 }
 
 /*
@@ -59,16 +60,17 @@ fio_code
 ffclose (void)
 {
   /* free this since we do not need it anymore */
-  if (fline)
+  if (fline != NULL)
     {
       free (fline);
       fline = NULL;
     }
+
   eofflag = FALSE;
   ftype = FTYPE_NONE;
   fcode = FCODE_ASCII;
 
-  return (fclose (ffp) != FALSE) ? FIOERR : FIOSUC;
+  return fclose (ffp) != FALSE ? FIOERR : FIOSUC;
 }
 
 /*
@@ -77,9 +79,9 @@ ffclose (void)
  * Check only at the newline.
  */
 fio_code
-ffputline (char *buf, int nbuf, int dosflag)
+ffputline (char *buf, int nbuf, bool dosflag)
 {
-  fwrite (buf, 1, nbuf, ffp);
+  fwrite (buf, sizeof (char), nbuf, ffp);
 
   if (dosflag)
     fputc ('\r', ffp);
@@ -105,27 +107,26 @@ ffgetline (void)
   int i;                   /* current index into fline */
   int lcode = FCODE_ASCII; /* line encoding, defaults to ASCII */
 
-  /* if we are at the end...return it */
+  /* If we are at the end -- return it.  */
   if (eofflag)
     return FIOEOF;
 
-  /* dump fline if it ended up too big */
+  /* Dump fline if it ended up too big.  */
   if (flen > NSTRING)
     {
       free (fline);
       fline = NULL;
     }
 
-  /* if we don't have an fline, allocate one */
-  if (fline == NULL)
-    if ((fline = malloc (flen = NSTRING)) == NULL)
-      return FIOMEM;
+  /* If we do not have an fline, allocate one.  */
+  if (fline == NULL && (fline = malloc (flen = NSTRING)) == NULL)
+    return FIOMEM;
 
-  /* read the line in */
+  /* Read the line in.  */
   i = 0;
   while ((c = fgetc (ffp)) != EOF && c != '\r' && c != '\n')
     {
-      /* if line is full, get more room */
+      /* If line is full, get more room.  */
       if (i >= flen)
         {
           char *tmpline; /* temp storage for expanding line */
@@ -151,7 +152,7 @@ ffgetline (void)
       /* Check if consistent UTF-8 encoding */
       int pos = 0;
 
-      while ((pos < i) && (lcode != FCODE_MIXED))
+      while (pos < i && lcode != FCODE_MIXED)
         {
           unicode_t uc;
           int bytes;

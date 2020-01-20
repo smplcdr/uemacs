@@ -21,7 +21,7 @@ die (const char *err)
   fputs ("fatal: ", stderr);
   fputs (err, stderr);
   fputs ("\n", stderr);
-  exit (EXIT_FAILURE);
+  abort ();
 }
 
 /* Function copyright: git */
@@ -33,8 +33,9 @@ xmkstemp (char *template)
 
   o_mask = umask (0177);
   fd = mkstemp (template);
+
   if (fd < 0)
-    die ("Unable to create temporary file");
+    die ("unable to create temporary file");
 
   umask (o_mask);
   close (fd);
@@ -44,8 +45,9 @@ void *
 xmalloc (size_t size)
 {
   void *ret = malloc (size);
-  if (!ret)
-    die ("Out of memory");
+
+  if (ret == NULL)
+    die ("memory exhausted");
 
   return ret;
 }

@@ -1,8 +1,16 @@
-/* Structure for the name binding table. */
+
+#ifndef _NAMES_H
+#define _NAMES_H 1
+
+#include "defines.h"
+
+/* Structure for the name binding table.  */
 struct name_bind
 {
-  char *n_name;             /* name of function key */
-  int (*n_func) (int, int); /* function name is bound to */
+  char *n_name;             /* Name of function key.  */
+  int (*n_func) (bool, int); /* Function name is bound to.  */
 };
 
-extern struct name_bind names[]; /* name to function table */
+extern struct name_bind names[]; /* Name to function table.  */
+
+#endif

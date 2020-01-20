@@ -10,6 +10,7 @@
  *  modified by Petri Kutvonen
  */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,9 +28,9 @@
 #include "wrapper.h"
 
 #if PKCODE && UNIX
-#define COMPLC 1
+# define COMPLC 1
 #else
-#define COMPLC 0
+# define COMPLC 0
 #endif
 
 #define NKBDM 256       /* # of strokes, keyboard macro     */
@@ -51,13 +52,8 @@ const int nlc = CONTROL | 'J'; /* end of input char */
 void
 em_system (const char *cmd)
 {
-  int ret;
-
-  ret = system (cmd);
-  if (ret == -1)
-    {
-      /* some actual handling needed here */
-    }
+  if (system (cmd) < 0)
+    mlwrite ("Failed to execute command");
 }
 
 /*
@@ -68,24 +64,30 @@ em_system (const char *cmd)
 int
 mlyesno (const char *prompt)
 {
-  int c; /* input character */
+  int status;
+  char buf[128];
+  char prmt[512];
 
-  while (TRUE)
+  assert (strlen (prompt) < sizeof (prmt) - sizeof (" (yes or no) "));
+
+  sprintf (prmt, "%s (yes or no) ", prompt);
+
+  while (1)
     {
-      /* prompt the user */
-      mlwrite ("%s (y/n)? ", prompt);
+      status = getstring (prmt, buf, sizeof (buf), nlc);
 
-      /* get the response */
-      c = get1key ();
-
-      if (c == abortc) /* Bail out! */
+      if (status == ABORT)
         return ABORT;
 
-      if (c == 'y' || c == 'Y')
-        return TRUE;
-
-      if (c == 'n' || c == 'N')
-        return FALSE;
+      if (status == TRUE)
+        {
+          if (strcasecmp (buf, "yes") == 0)
+            return TRUE;
+          if (strcasecmp (buf, "no") == 0)
+            return FALSE;
+        }
+      mlwrite ("Please, answer yes or no.");
+      sleep (1);
     }
 }
 
@@ -105,7 +107,7 @@ newnextarg (char **outbufref, const char *prompt, int size, int terminator)
   int status;
   char *buf;
 
-  /* if we are interactive, go get it! */
+  /* If we are interactive, go get it! */
   if (clexec == FALSE)
     {
       if (size <= 1)
@@ -117,11 +119,11 @@ newnextarg (char **outbufref, const char *prompt, int size, int terminator)
 
       buf = malloc (size);
       if (buf == NULL)
-        status = FALSE;
+        status = FAILURE;
       else
         {
           status = getstring (prompt, buf, size, terminator);
-          if (TRUE != status)
+          if (status != SUCCESS)
             {
               free (buf);
               buf = NULL;
@@ -131,7 +133,7 @@ newnextarg (char **outbufref, const char *prompt, int size, int terminator)
   else
     {
       buf = getnewtokval ();
-      status = (buf == NULL) ? FALSE : TRUE;
+      status = (buf != NULL) ? SUCCESS : FAILURE;
     }
 
   *outbufref = buf;
@@ -145,7 +147,6 @@ newnextarg (char **outbufref, const char *prompt, int size, int terminator)
  * lets macros run at full speed. The reply is always terminated by a carriage
  * return. Handle erase, kill, and abort keys.
  */
-
 int
 newmlarg (char **outbufref, const char *prompt, int size)
 {
@@ -329,10 +330,9 @@ tgetc (void)
   /* if we are playing a keyboard macro back, */
   if (kbdmode == PLAY)
     {
-
       /* if there is some left... */
       if (kbdptr < kbdend)
-        return (int)*kbdptr++;
+        return *kbdptr++;
 
       /* at the end of last repetition? */
       if (--kbdrep < 1)
@@ -348,7 +348,7 @@ tgetc (void)
 
           /* reset the macro to the begining for the next rep */
           kbdptr = &kbdm[0];
-          return (int)*kbdptr++;
+          return *kbdptr++;
         }
     }
 
@@ -392,14 +392,13 @@ get1key (void)
   return c;
 }
 
-/*  GETCMD: Get a command from the keyboard. Process all applicable
-    prefix keys */
-
-static int
-get1unicode (int *k)
+/* getcmd: Get a command from the keyboard. Process all applicable
+   prefix keys */
+static unsigned int
+get1unicode (unicode_t *k)
 {
   /* Accept UTF-8 sequence */
-  int c = *k;
+  unicode_t c = *k;
   if (c > 0xC1 && c <= 0xF4)
     {
       char utf[4];
@@ -408,15 +407,15 @@ get1unicode (int *k)
       utf[0] = c;
       utf[1] = cc = get1key ();
       if ((c & 0x20) && ((cc & 0xC0) == 0x80))
-        { /* at least 3 bytes and a valid encoded char */
+        {
+          /* At least 3 bytes and a valid encoded char.  */
           utf[2] = cc = get1key ();
-          if ((c & 0x10)
-              && ((cc & 0xC0)
-                  == 0x80)) /* at least 4 bytes and a valid encoded char */
+          if ((c & 0x10) && ((cc & 0xC0) == 0x80))
+            /* At least 4 bytes and a valid encoded char.  */
             utf[3] = get1key ();
         }
 
-      return utf8_to_unicode (utf, 0, sizeof utf, (unicode_t *)k);
+      return utf8_to_unicode (utf, 0, sizeof (utf), k);
     }
   else
     return 1;
@@ -517,14 +516,14 @@ proc_metac:
 #if VT220
 proc_ctlxc:
 #endif
-  /* process CTLX prefix */
+  /* process CTRLX prefix */
   if (c == ctlxc)
     {
       c = get1key ();
 #if VT220
       if (c == (CONTROL | '['))
         {
-          cmask = CTLX;
+          cmask = CTRLX;
           goto proc_metac;
         }
 #endif
@@ -532,11 +531,11 @@ proc_ctlxc:
         c -= 0x20;
       if (c >= 0x00 && c <= 0x1F) /* control key */
         c = CONTROL | (c + '@');
-      return CTLX | c;
+      return CTRLX | c;
     }
 
 #ifdef CYGWIN
-  get1unicode (&c);
+  get1unicode ((unicode_t) &c);
 #endif
 
   /* otherwise, just return it */
@@ -547,7 +546,6 @@ proc_ctlxc:
     to specify the proper terminator. If the terminator is not
     a return ('\n') it will echo as "<NL>"
 */
-
 static void
 echov (int c)
 {
@@ -597,7 +595,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
   char *fcp;
 #endif
 #if UNIX
-  static char tmp[] = "/tmp/meXXXXXX";
+  static char tmp[] = "/tmp/em-XXXXXXXXX";
   FILE *tmpf = NULL;
 #endif
   /*  Look for "Find file: ", "View file: ", "Insert file: ", "Write file: ",
@@ -611,7 +609,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
   /* prompt the user for the input string */
   mlwrite ("%s", prompt);
 
-  for (;;)
+  while (1)
     {
 #if COMPLC
       if (!didtry)
@@ -669,7 +667,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
           if (cpos != 0)
             {
               rubc (buf[--cpos]);
-              cpos -= utf8_revdelta ((unsigned char *)&buf[cpos], cpos);
+              cpos -= utf8_revdelta ((unsigned char *) &buf[cpos], cpos);
               TTflush ();
             }
         }
@@ -715,11 +713,11 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
                   unlink (tmp);
                 }
 
-              strcpy (tmp, "/tmp/meXXXXXX");
+              strcpy (tmp, "/tmp/em-XXXXXXXXX");
               xmkstemp (tmp);
+
               if (strlen (buf) < sizeof ffbuf - 26 - 1)
-                sprintf (ffbuf, "echo %s%s >%s 2>&1", buf, !iswild ? "*" : "",
-                         tmp);
+                sprintf (ffbuf, "echo %s%s >%s 2>&1", buf, iswild ? "" : "*", tmp);
               else
                 sprintf (ffbuf, "echo ERROR >%s 2>&1", tmp);
 
@@ -757,8 +755,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
             }
 #if UNIX
           while ((c = getc (tmpf)) != EOF && c != '\n' && c != ' ' && c != '*')
-#endif
-#if MSDOS
+#elif MSDOS
             if (c == '*')
               fcp = sffbuf;
             else
@@ -780,7 +777,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
 
           for (n = 0; n < cpos;)
             {
-              n += utf8_to_unicode (buf, n, nbuf, (unicode_t *)&c);
+              n += utf8_to_unicode (buf, n, nbuf, (unicode_t *) &c);
               echov (c);
             }
 
@@ -798,7 +795,7 @@ getstring (const char *prompt, char *buf, int nbuf, int eolchar)
           /* store as it is */
           int n;
 
-          n = get1unicode (&c); /* fetch multiple bytes */
+          n = get1unicode ((unicode_t *) &c); /* fetch multiple bytes */
           if (cpos + n < nbuf)
             {
               cpos += unicode_to_utf8 (c, &buf[cpos]);

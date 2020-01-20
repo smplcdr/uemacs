@@ -71,7 +71,7 @@
 
 #include "estruct.h" /* Global structures and defines. */
 #if UNIX
-#include <signal.h>
+# include <signal.h>
 #endif
 
 #include "basic.h"
@@ -112,7 +112,7 @@ version (void)
 static void
 usage (void)
 {
-  puts ("Usage: " PROGRAM_NAME " [OPTION|FILE]..\n");
+  puts ("Usage: "PROGRAM_NAME" [OPTION|FILE]..\n");
   puts ("      +             start at the end of file");
   puts ("      +<n>          start at line <n>");
   puts ("      --help        display this help and exit");
@@ -130,26 +130,26 @@ usage (void)
 int
 main (int argc, char **argv)
 {
-  struct buffer *bp;             /* temp buffer pointer */
-  int firstfile;                 /* first file flag */
-  int carg;                      /* current arg to scan */
-  int startflag;                 /* startup executed flag */
-  struct buffer *firstbp = NULL; /* ptr to first buffer in cmd line */
-  int viewflag;                  /* are we starting in view mode? */
-  int gotoflag;                  /* do we need to goto a line at start? */
-  int gline = 0;                 /* if so, what line? */
+  buffer_p bp;                   /* Temperary buffer pointer.  */
+  int firstfile;                 /* First file flag.  */
+  int carg;                      /* Current arg to scan.  */
+  int startflag;                 /* Startup executed flag.  */
+  buffer_p firstbp = NULL;       /* Pointer to first buffer in command line.  */
+  bool viewflag;                 /* Are we starting in view mode? */
+  bool gotoflag;                 /* Do we need to goto a line at start? */
+  int gline = 0;                 /* If so, what line? */
   int searchflag;                /* Do we need to search at start? */
   int errflag;                   /* C error processing? */
-  bname_t bname;                 /* buffer name of file to read */
+  bname_t bname;                 /* Buffer name of file to read.  */
 
 #if PKCODE & BSD
   sleep (1); /* Time for window manager. */
 #endif
 
 #if UNIX
-#ifdef SIGWINCH
+# ifdef SIGWINCH
   signal (SIGWINCH, sizesignal);
-#endif
+# endif
 #endif
   if (argc == 2)
     {
@@ -158,7 +158,6 @@ main (int argc, char **argv)
           usage ();
           exit (EXIT_SUCCESS);
         }
-
       if (strcmp (argv[1], "--version") == 0)
         {
           version ();
@@ -169,23 +168,23 @@ main (int argc, char **argv)
   /* Initialize the editor. */
   vtinit (); /* Display */
   mloutfmt = mlwrite;
-  edinit ("main"); /* Buffers, windows */
-  varinit ();      /* user variables */
+  edinit ("*scratch*"); /* Buffers, windows.  */
+  varinit (); /* User variables.  */
 
-  viewflag = FALSE;   /* view mode defaults off in command line */
-  gotoflag = FALSE;   /* set to off to begin with */
-  searchflag = FALSE; /* set to off to begin with */
-  firstfile = TRUE;   /* no file to edit yet */
-  startflag = FALSE;  /* startup file not executed yet */
-  errflag = FALSE;    /* not doing C error parsing */
+  viewflag = FALSE;   /* View mode defaults off in command line.  */
+  gotoflag = FALSE;   /* Set to off to begin with.  */
+  searchflag = FALSE; /* Set to off to begin with.  */
+  firstfile = TRUE;   /* No file to edit yet.  */
+  startflag = FALSE;  /* Startup file not executed yet.  */
+  errflag = FALSE;    /* Not doing C error parsing.  */
 
-  /* Insure screen is initialized before startup and goto/search */
+  /* Insure screen is initialized before startup and goto/search.  */
   update (FALSE);
 
-  /* Parse the command line */
-  for (carg = 1; carg < argc; ++carg)
+  /* Parse the command line.  */
+  for (carg = 1; carg < argc; carg++)
     {
-      /* Process Switches */
+      /* Process Switches.  */
 #if PKCODE
       if (argv[carg][0] == '+')
         {
@@ -198,25 +197,25 @@ main (int argc, char **argv)
           {
             switch (argv[carg][1])
               {
-                /* Process Startup macroes */
-              case 'a': /* process error file */
+                /* Process Startup macroes.  */
+              case 'a': /* Process error file.  */
                 errflag = TRUE;
                 break;
-              case 'e': /* -e for Edit file */
+              case 'e': /* -e for Edit file.  */
                 viewflag = FALSE;
                 break;
-              case 'g': /* -g for initial goto */
+              case 'g': /* -g for initial goto.  */
                 gotoflag = TRUE;
                 gline = atoi (&argv[carg][2]);
                 break;
-              case 'r': /* -r restrictive use */
+              case 'r': /* -r restrictive use.  */
                 restflag = TRUE;
                 break;
-              case 's': /* -s for initial search string */
+              case 's': /* -s for initial search string.  */
                 searchflag = TRUE;
-                strlcpy (pat, &argv[carg][2], sizeof (pat));
+                strscpy (pat, &argv[carg][2], sizeof (pat));
                 break;
-              case 'v': /* -v for View File */
+              case 'v': /* -v for View File.  */
                 viewflag = TRUE;
                 break;
               case 'x':
@@ -224,43 +223,44 @@ main (int argc, char **argv)
                   {
                     /* -xfilename */
                     if (startup (&argv[carg][2]) == TRUE)
-                      startflag = TRUE; /* don't execute emacs.rc */
+                      startflag = TRUE; /* Do not execute emacs.rc */
                   }
                 else if (argv[carg + 1] != NULL)
                   {
                     /* -x filename */
                     if (startup (&argv[carg + 1][0]) == TRUE)
-                      startflag = TRUE; /* don't execute emacs.rc */
-                    carg += 1;
+                      startflag = TRUE; /* Do not execute emacs.rc */
+                    carg++;
                   }
                 break;
-              default: /* unknown switch */
-                /* ignore this for now */
+              default: /* Unknown switch.  */
+                /* Ignore this for now.  */
                 break;
               }
           }
         else if (argv[carg][0] == '@')
           {
-            /* Process Startup macroes */
+            /* Process Startup macroes.  */
             if (startup (&argv[carg][1]) == TRUE)
-              /* don't execute emacs.rc */
+              /* Do not execute emacs.rc */
               startflag = TRUE;
           }
         else
           {
-            /* Process an input file */
-            /* set up a buffer for this file */
+            /* Process an input file.  */
+            /* Set up a buffer for this file.  */
             makename (bname, argv[carg]);
             unqname (bname);
-            /* set this to inactive */
-            bp = bfind (bname, TRUE, 0);
-            if (bp == NULL)
+            /* Set this to inactive.  */
+            if ((bp = bfind (bname, 0)) == NULL && (bp = bcreate (bname, 0)) == NULL)
               {
                 fputs ("Buffer creation failed!\n", stderr);
                 exit (EXIT_FAILURE);
               }
 
-            strlcpy (bp->b_fname, argv[carg], sizeof (bp->b_fname)); /* max filename length limited to NFILEN - 1 */
+            /* Max filename length limited to NFILEN - 1.  */
+            strscpy (bp->b_fname, argv[carg], sizeof (bp->b_fname));
+
             bp->b_active = FALSE;
             if (firstfile)
               {
@@ -268,7 +268,7 @@ main (int argc, char **argv)
                 firstfile = FALSE;
               }
 
-            /* set the modes appropriatly */
+            /* Set the modes appropriatly.  */
             if (viewflag)
               bp->b_mode |= MDVIEW;
           }
@@ -281,25 +281,21 @@ main (int argc, char **argv)
   signal (SIGTERM, emergencyexit);
 #endif
 
-  /* if we are C error parsing... run it! */
-  if (errflag)
-    {
-      if (startup ("error.cmd") == TRUE)
-        startflag = TRUE;
-    }
+  /* If we are C error parsing... run it! */
+  if (errflag && startup ("error.cmd") == SUCCESS)
+    startflag = TRUE;
 
-  /* if invoked with no other startup files,
-     run the system startup file here */
-  if ((startflag == FALSE) && (startup ("") != TRUE))
+  /* If invoked with no other startup files,
+     run the system startup file here.  */
+  if (!startflag && startup ("") != SUCCESS)
     mloutstr ("Default startup failed!");
 
   discmd = TRUE; /* P.K. */
 
   /* if there are any files to read, read the first one! */
-  bp = bfind ("main", FALSE, 0);
-  if (bp == NULL)
+  if ((bp = bfind ("*scratch*", 0)) == NULL)
     {
-      /* "main" buffer has been created during early initialisation */
+      /* "*scratch*" buffer has been created during early initialisation */
       fputs ("Initialisation failure!\n", stderr);
       exit (EXIT_FAILURE);
     }
@@ -328,7 +324,7 @@ main (int argc, char **argv)
       mloutfmt ("Found on line %d", getcline ());
 
   kbd_loop ();
-  return EXIT_SUCCESS; /* never reached */
+  return EXIT_SUCCESS; /* Never reached.  */
 }
 
 /*
@@ -339,23 +335,24 @@ main (int argc, char **argv)
 static void
 edinit (char *bname)
 {
-  struct buffer *bp;
-  struct window *wp;
+  buffer_p bp;
+  window_p wp;
 
-  if (NULL == (bp = bfind (bname, TRUE, 0)) /* First buffer         */
-      || NULL == (blistp = bfind ("*List*", TRUE, BFINVS)) /* Buffer list buffer   */
-      || NULL == (wp = malloc (sizeof (*wp))))
-    { /* First window         */
+  if (NULL == (bp = bcreate (bname, 0)) /* First buffer.  */
+      || NULL == (blistp = bcreate ("*List*", BFINVS)) /* Buffer list buffer.  */
+      || NULL == (wp = malloc (sizeof (*wp)))) /* First window.  */
+    {
       fputs ("First initialisation failed!\n", stderr);
       exit (EXIT_FAILURE);
     }
 
-  curbp = bp; /* Make this current    */
+  curbp = bp; /* Make this current.  */
+  bscratchp = bp;
   wheadp = wp;
   curwp = wp;
-  wp->w_wndp = NULL; /* Initialize window    */
+  wp->w_wndp = NULL; /* Initialize window.  */
   wp->w_bufp = bp;
-  bp->b_nwnd = 1; /* Displayed.           */
+  bp->b_nwnd = 1; /* Displayed.  */
   wp->w_linep = bp->b_linep;
   wp->w_dotp = bp->b_linep;
   wp->w_doto = 0;
@@ -363,44 +360,41 @@ edinit (char *bname)
   wp->w_marko = 0;
   wp->w_toprow = 0;
 #if COLOR
-  /* initalize colors to global defaults */
+  /* Initalize colors to global defaults.  */
   wp->w_fcolor = gfcolor;
   wp->w_bcolor = gbcolor;
 #endif
   wp->w_ntrows = term.t_nrow - 1; /* "-1" for mode line.  */
   wp->w_force = 0;
-  wp->w_flag = WFMODE | WFHARD; /* Full.                */
+  wp->w_flag = WFMODE | WFHARD; /* Full.  */
 }
 
-/*****    Compiler specific Library functions ****/
+/***** Compiler specific Library functions ****/
 
 #if RAMSIZE
 /*  These routines will allow me to track memory usage by placing
-        a layer on top of the standard system malloc() and free() calls.
-        with this code defined, the environment variable, $RAM, will
-        report on the number of bytes allocated via malloc.
+    a layer on top of the standard system malloc() and free() calls.
+    with this code defined, the environment variable, $RAM, will
+    report on the number of bytes allocated via malloc.
 
-        with SHOWRAM defined, the number is also posted on the
-        end of the bottom mode line and is updated whenever it is changed.
-*/
-
+    with SHOWRAM defined, the number is also posted on the
+    end of the bottom mode line and is updated whenever it is changed.  */
 static void dspram (void);
 
-#undef malloc
-#undef free
+# undef malloc
+# undef free
 void *
 allocate (size_t nbytes)
 {
-  char *mp; /* ptr returned from malloc */
-            /*  char *malloc(); */
+  char *mp;
 
   mp = malloc (nbytes);
   if (mp != NULL)
     {
       envram += nbytes;
-#if RAMSHOW
+# if RAMSHOW
       dspram ();
-#endif
+# endif
     }
 
   return mp;
@@ -409,21 +403,21 @@ allocate (size_t nbytes)
 void
 release (void *mp)
 {
-  unsigned *lp; /* ptr to the long containing the block size */
+  unsigned int *lp; /* Pointer to the long containing the block size.  */
 
   if (mp != NULL)
     {
-      /* update amount of ram currently malloced */
-      lp = ((unsigned *) mp) - 1;
+      /* Update amount of ram currently malloced.  */
+      lp = ((unsigned int *) mp) - 1;
       envram -= (long) *lp - 2;
       free (mp);
-#if RAMSHOW
+# if RAMSHOW
       dspram ();
-#endif
+# endif
     }
 }
 
-#if RAMSHOW
+# if RAMSHOW
 static void
 dspram (void)
 { /* display the amount of RAM currently malloced */
@@ -431,65 +425,59 @@ dspram (void)
   char *sp;
 
   TTmove (term.t_nrow - 1, 70);
-#if COLOR
+#  if COLOR
   TTforg (7);
   TTbacg (0);
-#endif
+#  endif
   sprintf (mbuf, "[%lu]", envram);
   sp = &mbuf[0];
-  while (*sp)
+  while (*sp != '\0')
     TTputc (*sp++);
   TTmove (term.t_nrow, 0);
   movecursor (term.t_nrow, 0);
 }
-#endif
+# endif
 #endif
 
-/*  On some primitave operation systems, and when emacs is used as
-        a subprogram to a larger project, emacs needs to de-alloc its
-        own used memory
-*/
-
+/* On some primitave operation systems, and when emacs is used as
+   a subprogram to a larger project, emacs needs to dealloc its
+   own used memory.  */
 #if CLEAN
-/*
- * cexit()
- *
- * int status;    return status of emacs
- */
 void
 cexit (int status)
 {
-  struct buffer *bp; /* buffer list pointer */
-  struct window *wp; /* window list pointer */
-  struct window *tp; /* temporary window pointer */
+  buffer_p bp; /* Buffer list pointer.  */
+  window_p wp; /* Window list pointer.  */
 
-  /* first clean up the windows */
+  /* Clean up the windows.  */
   wp = wheadp;
   while (wp != NULL)
     {
-      tp = wp->w_wndp;
+      window_p tmp;
+
+      tmp = wp->w_wndp;
       free (wp);
-      wp = tp;
+      wp = tmp;
     }
   wheadp = NULL;
 
-  /* then the buffers */
+  /* Clean up the buffers.  */
   bp = bheadp;
   while (bp)
     {
       bp->b_nwnd = 0;
-      bp->b_flag = 0; /* don't say anything about a changed buffer! */
+      bp->b_flag = 0; /* Do not say anything about a changed buffer! */
       zotbuf (bp);
       bp = bheadp;
     }
 
-  /* and the kill buffer */
+  /* Clean up the kill buffer.  */
   kdelete ();
 
-  /* and the video buffers */
+  /* Clean up the video buffers.  */
   vtfree ();
 
-#undef exit
+# undef exit
   exit (status);
 }
 #endif
